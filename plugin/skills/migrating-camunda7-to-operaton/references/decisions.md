@@ -2,9 +2,9 @@
 
 Catalogue of the 18 migration decisions with the question to ask, the options, the recommended default and the
 consequence. IDs and recommendations match the guide:
-[01 · Decision catalogue](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#4-decision-catalogue)
+[01 · Decision catalogue](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#4-decision-catalogue)
 (each decision has an anchor, e.g. `…/01-migration-path-and-decisions.md#d5`). Versions: see references/versions.md.
-Spring Boot 3.5 path: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/15-coming-from-spring-boot-3.md).
+Spring Boot 3.5 path: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/15-coming-from-spring-boot-3.md).
 
 ## Contents
 
@@ -303,7 +303,7 @@ D16 classic webapps.
 - Deviations from a default: one line on the accepted risk, plus a MUST item in "Open items" if it touches D5, D7,
   D15, D17 or D18.
 - For humans who keep a separate decision log, point to the template:
-  [checklists/decision-log-template.md](https://github.com/Miragon/migration-recipies/blob/main/services/c7/checklists/decision-log-template.md)
+  [checklists/decision-log-template.md](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/checklists/decision-log-template.md)
   (it contains a fully worked D5 entry).
 - Re-check decisions at each mode switch (`migrate` → `cutover`; Spring Boot 3.5 path: `migrate` → `hop2` → `cutover`).
   A runbook stub with placeholders is fine at any time; the tailored runbook must not leave DRAFT while D5, D7, D8, D15,

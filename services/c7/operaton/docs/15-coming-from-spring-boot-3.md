@@ -46,11 +46,11 @@ The whole sequence for one service, with one commit per hop:
 
 ```bash
 cd ~/src/order-service && git switch -c migration/operaton
-~/migration-recipies/services/c7/scripts/migrate.sh --hop 1 --dry-run .   # review target/rewrite/rewrite.patch
-~/migration-recipies/services/c7/scripts/migrate.sh --hop 1 --with-infra-env .
-~/migration-recipies/services/c7/scripts/verify-leftovers.sh .              # exit 1 = must-fix leftovers
+~/migration-recipies/services/c7/operaton/scripts/migrate.sh --hop 1 --dry-run .   # review target/rewrite/rewrite.patch
+~/migration-recipies/services/c7/operaton/scripts/migrate.sh --hop 1 --with-infra-env .
+~/migration-recipies/services/c7/operaton/scripts/verify-leftovers.sh .              # exit 1 = must-fix leftovers
 mvn -B verify && git add -A && git commit -m "Hop 1: Camunda 7.24 -> Operaton 1.1.5"
-~/migration-recipies/services/c7/scripts/migrate.sh --hop 2 --target 2.1.5 .   # same routine: --dry-run first, verify-leftovers after
+~/migration-recipies/services/c7/operaton/scripts/migrate.sh --hop 2 --target 2.1.5 .   # same routine: --dry-run first, verify-leftovers after
 mvn -B verify && git add -A && git commit -m "Hop 2: Operaton 2.1.5 + Spring Boot 4"
 ```
 

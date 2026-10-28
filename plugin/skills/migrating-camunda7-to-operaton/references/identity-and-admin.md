@@ -3,7 +3,7 @@
 Decision D5 in practice: what changes, why the webapp setup endpoint re-opens, how to close it (SQL, plugin, IdP
 mapping), how to prove it is closed without ever POSTing on production, and the LDAP/Keycloak/OAuth2 traps. Plus the
 Camunda EE hardening Operaton does not have (decision D17, section 10). Guide chapter:
-[07 · Identity, admin group and security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/07-identity-admin-group-and-security.md).
+[07 · Identity, admin group and security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/07-identity-admin-group-and-security.md).
 
 ## Contents
 

@@ -1,8 +1,8 @@
 # Configuration: properties, env vars, beans, loggers, health, webapp path, fail-fast guard
 
-Guide chapters: [04 Spring Boot dependencies and configuration](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/04-spring-boot-dependencies-and-configuration.md) ·
-[09 webapps and REST](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/09-webapps-rest-api-and-clients.md) ·
-[11 operations](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/11-cutover-rollback-and-operations.md).
+Guide chapters: [04 Spring Boot dependencies and configuration](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/04-spring-boot-dependencies-and-configuration.md) ·
+[09 webapps and REST](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/09-webapps-rest-api-and-clients.md) ·
+[11 operations](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/11-cutover-rollback-and-operations.md).
 
 ## Contents
 

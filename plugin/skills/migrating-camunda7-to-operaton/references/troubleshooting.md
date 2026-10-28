@@ -1,6 +1,6 @@
 # Troubleshooting: error message → cause → fix
 
-Guide chapter (error → fix tables, top tips, FAQ): https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/13-tips-tricks-and-troubleshooting.md
+Guide chapter (error → fix tables, top tips, FAQ): https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/13-tips-tricks-and-troubleshooting.md
 Messages are verbatim where the guide has them; `…` marks trimmed parts. Search this file for a distinctive fragment
 (an `ENGINE-xxxxx` code, a class name, a quoted id). Snippets for most fixes: references/fix-catalog.md.
 

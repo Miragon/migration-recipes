@@ -2,7 +2,7 @@
 
 Load this when the project has `.bpmn`/`.dmn`/`.cmmn`/`.form` files, script code (inline or external), custom EL
 code, or when `assess.sh` reports model findings. Guide chapter:
-https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/05-bpmn-dmn-forms-and-scripts.md
+https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/05-bpmn-dmn-forms-and-scripts.md
 
 ## Contents
 
@@ -78,7 +78,7 @@ hard stop (D15).
   open production models in the Operaton Modeler.
 - Convert only if the user chose D3 option B/C, after the rollback window, one deployment unit at a time, whole files,
   never single attributes. Fix mixed files by hand first. Tooling and verification: chapter 05,
-  [Converting namespaces safely](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/05-bpmn-dmn-forms-and-scripts.md#converting-namespaces-safely).
+  [Converting namespaces safely](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/05-bpmn-dmn-forms-and-scripts.md#converting-namespaces-safely).
   Do not replace: `org.camunda.feel.*`, `connectorId` values, form-key prefixes `embedded:`/`app:`/`deployment:`, group ids
   like `camunda-admin`, OMG prefixes, the DMN `definitions/@namespace` attribute.
 - **Model API trap:** the recipe rewrites `BpmnModelConstants.CAMUNDA_NS` → `OPERATON_NS`. Raw lookups such as

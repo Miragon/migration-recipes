@@ -9,7 +9,7 @@ which lives in this folder. Agents read the marketplace from
 
 | Plugin | Skill | What it does |
 |---|---|---|
-| `operaton-migration` | [`migrating-camunda7-to-operaton`](skills/migrating-camunda7-to-operaton/SKILL.md) | Walks a Spring Boot application with an embedded Camunda 7 engine to Operaton 2.x: assess, decide, migrate, verify and cut over. Runs the scripts, recipes and SQL of the [Camunda 7 → Operaton guide](../services/c7/README.md) |
+| `operaton-migration` | [`migrating-camunda7-to-operaton`](skills/migrating-camunda7-to-operaton/SKILL.md) | Walks a Spring Boot application with an embedded Camunda 7 engine to Operaton 2.x: assess, decide, migrate, verify and cut over. Runs the scripts, recipes and SQL of the [Camunda 7 → Operaton guide](../services/c7/operaton/README.md) |
 
 Each skill is self-contained: `SKILL.md` is the entry point, `references/` holds the details the agent loads on demand,
 and `scripts/` and `assets/` hold what the agent runs.
@@ -57,11 +57,15 @@ gh skill install Miragon/migration-recipies migrating-camunda7-to-operaton
 
 The full instructions, with the Claude model to pick per Copilot plan, VS Code settings, the Copilot cloud-agent setup
 and the folders each agent reads, are in the guide:
-[Use it with Claude Code or GitHub Copilot](../services/c7/README.md#let-claude-drive).
+[Use it with Claude Code or GitHub Copilot](../services/c7/operaton/README.md#let-claude-drive).
 
 ## Maintaining the skills
 
 The skill's `scripts/` and its `assets/rewrite.yml`, `assets/sql/` and `assets/snippets/` are **copies** of the
-canonical files in [`services/c7/`](../services/c7/). Edit the canonical file, then run
-`services/c7/tools/sync-skill.sh`; CI fails if the copies drift. The rules for the skill (self-contained, portable
-between Claude Code and GitHub Copilot) are in the guide's [CONTRIBUTING.md](../services/c7/CONTRIBUTING.md#the-skill).
+canonical files of its guide in [`services/c7/operaton/`](../services/c7/operaton/). Edit the canonical file, then
+run `services/c7/operaton/tools/sync-skill.sh`; CI fails if the copies drift. The rules for the skill
+(self-contained, portable between Claude Code and GitHub Copilot) are in the guide's
+[CONTRIBUTING.md](../services/c7/operaton/CONTRIBUTING.md#the-skill).
+
+Skills for further migration paths go next to it into `skills/`, named after the path, for example
+`migrating-camunda7-to-camunda8` or `migrating-camunda7-to-cibseven`, and their guides into `services/<source>/<target>/`.

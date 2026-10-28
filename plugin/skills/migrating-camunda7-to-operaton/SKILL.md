@@ -21,7 +21,7 @@ Two source flavours, two paths. `assess.sh` reports which one applies (row "Migr
   never production). Spring Boot 4 on Camunda 7.24 always means EE, so decision D17 (Camunda EE features) is mandatory.
 - **Spring Boot 3.5 path:** Camunda 7.24 on Spring Boot 3.5 (CE 7.24.0, or EE still on 3.5). Two code
   changes (Hop 1 to the Operaton 1.1.5 checkpoint, Hop 2 to Operaton 2.x on Spring Boot 4) and one cut-over. Step 5
-  below; background: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/15-coming-from-spring-boot-3.md).
+  below; background: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/15-coming-from-spring-boot-3.md).
 
 ## Skill directory and bundled files
 
@@ -356,7 +356,7 @@ The GitHub Copilot cloud agent works without a human in the loop and opens a pul
 The skill is written for Claude Code and for GitHub Copilot agents with Claude models. The Copilot instructions follow
 GitHub's documentation; this project has not run the skill in Copilot yet. Full instructions (VS Code, JetBrains,
 models per Copilot plan):
-[README · Use it with Claude Code or GitHub Copilot](https://github.com/Miragon/migration-recipies/blob/main/services/c7/README.md#let-claude-drive).
+[README · Use it with Claude Code or GitHub Copilot](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/README.md#let-claude-drive).
 
 ```bash
 # Claude Code: plugin from this repository's marketplace

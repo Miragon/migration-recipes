@@ -57,7 +57,7 @@ EOF
 # Layout: starter-pack repository (docs/ next to scripts/) or the bundled Claude skill (assets/ next to
 # scripts/, no docs/) -> chapter links point to the guide on GitHub.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-GUIDE_URL="https://github.com/Miragon/migration-recipies/blob/main/services/c7"
+GUIDE_URL="https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton"
 if [ -d "$SCRIPT_DIR/../assets" ] && [ ! -d "$SCRIPT_DIR/../docs" ]; then DOCS="$GUIDE_URL/docs"; else DOCS="docs"; fi
 
 STRICT=0; IGNORE_FILE=""; MAX=25; EXCLUDES=""; PROJECT_DIR=""

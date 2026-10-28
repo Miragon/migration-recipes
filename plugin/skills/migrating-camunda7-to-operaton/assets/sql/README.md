@@ -19,9 +19,9 @@ One kind of Camunda data needs no script: the **Camunda EE license key**. Camund
 Operaton ignores these rows, and none of these scripts touches them. Leave them in place, because a rollback to
 Camunda EE uses the same database.
 
-Background: [Database: schema, data and SQL scripts](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/08-database-schema-data-and-sql-scripts.md),
-[Identity, admin group and security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/07-identity-admin-group-and-security.md), and the
-[cut-over runbook](https://github.com/Miragon/migration-recipies/blob/main/services/c7/checklists/cutover-runbook.md), which calls these scripts step by step.
+Background: [Database: schema, data and SQL scripts](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/08-database-schema-data-and-sql-scripts.md),
+[Identity, admin group and security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/07-identity-admin-group-and-security.md), and the
+[cut-over runbook](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/checklists/cutover-runbook.md), which calls these scripts step by step.
 
 ## Scripts
 
@@ -36,7 +36,7 @@ create.
 | [`postgresql/20-find-legacy-references.sql`](postgresql/20-find-legacy-references.sql) | legacy-reference scan (20) | assessment, rehearsal, freeze, hypercare | **read-only** |
 | [`postgresql/30-emergency-job-retries.sql`](postgresql/30-emergency-job-retries.sql) | emergency job retries (30) | **emergencies only** (API unavailable) | **writes**; 2nd run aborts |
 | [`postgresql/31-emergency-external-task-retries.sql`](postgresql/31-emergency-external-task-retries.sql) | emergency external-task retries (31) | **emergencies only** | **writes**; 2nd run aborts |
-| [`test/`](https://github.com/Miragon/migration-recipies/tree/main/services/c7/sql/test/) | test harness | before you adapt a script | – |
+| [`test/`](https://github.com/Miragon/migration-recipies/tree/main/services/c7/operaton/sql/test/) | test harness | before you adapt a script | – |
 
 ### Pre-flight check: `00-preflight-checks.sql`
 
@@ -83,7 +83,7 @@ cut-over gate, and after the first start.
   example `taskAssignee = ${currentUser()}`). Or-queries are included. Read it below.
 
 **Why P11 exists.** It is input for the
-[Camunda EE features decision (D17)](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#d17). Camunda 7.24.7-ee added an
+[Camunda EE features decision (D17)](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#d17). Camunda 7.24.7-ee added an
 allow-list for expressions in task queries (`queryExpressionAllowListEnabled`, on by default), after Camunda
 security notice 157 described expression injection through stored filters. Operaton has no allow-list. It only has
 the all-or-nothing switch `enable-expressions-in-stored-queries` (a generic property, default `true`), so it
@@ -110,7 +110,7 @@ repeats the P11 count for information and never changes the verdict.
 `operaton-admin`, and nothing migrates the group. With users stored in the engine database ("DB identity"), nobody
 is an Operaton admin after the switch. The webapps then think this is a fresh installation and open the **setup
 page**, which lets anyone who can reach it create an admin user without logging in. This script closes that hole
-([admin-group decision, D5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#d5)).
+([admin-group decision, D5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#d5)).
 
 **What it does:** it creates `operaton-admin` and mirrors the members, the authorizations (held by and on
 `camunda-admin`) and the tenant memberships. It rolls back on any mismatch. It never touches `camunda-admin` rows,
@@ -127,7 +127,7 @@ final notice. `OK: operaton-admin has … member(s)` means you are done. The oth
 [Pitfalls](#pitfalls).
 
 The example application does the same at startup with the Java plugin
-[`AdminGroupMigrationPlugin`](https://github.com/Miragon/migration-recipies/blob/main/services/c7/examples/operaton-spring-boot-migrated/src/main/java/com/example/orders/migration/AdminGroupMigrationPlugin.java).
+[`AdminGroupMigrationPlugin`](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/examples/operaton-spring-boot-migrated/src/main/java/com/example/orders/migration/AdminGroupMigrationPlugin.java).
 
 ### Legacy-reference scan: `20-find-legacy-references.sql`
 
@@ -145,14 +145,14 @@ big database run it on a replica or a restored copy.
 
 - **Variables and byte arrays with `org.camunda.*`** (L1, L2). Runtime variables block the cut-over. Convert them
   on Camunda 7.24, or **drain** them, which means you let the affected instances finish on Camunda before the
-  cut-over ([legacy-variables decision, D18](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#d18)). Hits in history
+  cut-over ([legacy-variables decision, D18](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#d18)). Hits in history
   tables do not block the cut-over: accept them or clean them up. Hits in stack traces are harmless text.
 - **Deployed resources that reference such classes, and their running work** (L3, L4). The engine never rewrites
   deployed resources, so a fix in Git only helps new versions. Instances on an old version fail when they reach the
   script: migrate them to a fixed version with the Migration API, or drain them.
 - **Models in the old Activiti namespace** (L5). Operaton does not parse them.
 - **`camunda-forms:` form keys** (L6), as input for the
-  [Camunda Forms keys decision (D4)](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#d4).
+  [Camunda Forms keys decision (D4)](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#d4).
 - **Decision and case definitions** behind the deployed-resource hits (L7), for information.
 - **Job and incident consistency** (L8). This is also the check after the emergency scripts (30, 31).
 - **A one-row summary** (L9). Its blocker columns must be 0 before the cut-over.
@@ -229,7 +229,7 @@ Special cases:
 
 ### Order: when to run what
 
-The scripts run at six moments of the migration. The [cut-over runbook](https://github.com/Miragon/migration-recipies/blob/main/services/c7/checklists/cutover-runbook.md) contains
+The scripts run at six moments of the migration. The [cut-over runbook](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/checklists/cutover-runbook.md) contains
 the same steps with owners and checkpoints.
 
 1. **Rehearsal on a production copy.** Find every blocker while there is still time to fix it. A production copy is
@@ -252,11 +252,11 @@ the same steps with owners and checkpoints.
    6. Start the first Operaton node.
 4. **After the first start.** With unchanged models, the pre-flight check (00) shows no new deployments. A new
    deployment may create definition versions that only Operaton can run, which blocks a rollback.
-   [`scripts/smoke-test.sh`](https://github.com/Miragon/migration-recipies/blob/main/services/c7/scripts/smoke-test.sh) must find the setup page closed.
+   [`scripts/smoke-test.sh`](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/scripts/smoke-test.sh) must find the setup page closed.
 5. **Hypercare.** Run the pre-flight check (00) and the job and incident checks (L8) of the legacy-reference scan
    (20), and compare them with the baseline. Failures that mention `org.camunda` classes show legacy references hit
    at runtime. Use the emergency scripts (30, 31) only if the API is down.
-6. **After the point of no return** ([rollback and point-of-no-return decision, D15](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#d15)).
+6. **After the point of no return** ([rollback and point-of-no-return decision, D15](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#d15)).
    This is the first moment Operaton has written data that Camunda 7.24 cannot read or run. After it, a rollback
    means restoring the backup. Only then clean up the `camunda-admin` rows with the commented section at the end of
    the admin-group script (10). Until then, Camunda 7.24 still needs them.
@@ -265,13 +265,13 @@ the same steps with owners and checkpoints.
 
 > [!WARNING]
 > Use the API whenever the engine runs: the API table in
-> [Direct SQL operations](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/08-database-schema-data-and-sql-scripts.md#direct-sql-operations-retries-incidents-locks-timers),
+> [Direct SQL operations](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/08-database-schema-data-and-sql-scripts.md#direct-sql-operations-retries-incidents-locks-timers),
 > Cockpit, or
-> [`IncidentRecoveryService`](https://github.com/Miragon/migration-recipies/blob/main/services/c7/examples/operaton-spring-boot-migrated/src/main/java/com/example/orders/operations/IncidentRecoveryService.java).
+> [`IncidentRecoveryService`](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/examples/operaton-spring-boot-migrated/src/main/java/com/example/orders/operations/IncidentRecoveryService.java).
 > SQL checks no authorizations, writes no operation log and never calls your `IncidentHandler`.
 
 The strict rules behind these steps are in
-[Emergency SQL: strict rules of use](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/08-database-schema-data-and-sql-scripts.md#emergency-sql-strict-rules-of-use).
+[Emergency SQL: strict rules of use](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/08-database-schema-data-and-sql-scripts.md#emergency-sql-strict-rules-of-use).
 
 1. **Make sure no engine is writing.** Stop all engine nodes. For the job script (30), setting
    `operaton.bpm.job-execution.enabled=false` on **all** of them is enough. Take a backup, open a ticket and get a second reviewer.
@@ -337,7 +337,7 @@ Each entry starts with what you see, then explains the cause and the fix.
 - **Symptom:** the admin-group script (10) prints `No camunda-admin group in ACT_ID_GROUP`.
   **Cause:** your groups live in LDAP, Keycloak or OAuth2, not in the engine database.
   **Fix:** map the admin group there
-  ([Identity, admin group and security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/07-identity-admin-group-and-security.md)).
+  ([Identity, admin group and security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/07-identity-admin-group-and-security.md)).
 - **Symptom:** former admins still lack admin rights after the admin-group script (10).
   **Cause:** webapp sessions cache the groups.
   **Fix:** log in again.

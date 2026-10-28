@@ -134,7 +134,7 @@ AI tools can help you look at an engine before and after the cut-over. They do n
 of this pack.
 
 - This pack's agent skill,
-  [`plugin/skills/migrating-camunda7-to-operaton/SKILL.md`](../../../plugin/skills/migrating-camunda7-to-operaton/SKILL.md), drives the
+  [`plugin/skills/migrating-camunda7-to-operaton/SKILL.md`](../../../../plugin/skills/migrating-camunda7-to-operaton/SKILL.md), drives the
   recipes, scripts and checks. It works with Claude Code, and with GitHub Copilot when you choose a Claude model
   (installation: [Use it with Claude Code or GitHub Copilot](../README.md#let-claude-drive)). It starts
   assessment-only and never runs database-changing SQL itself.

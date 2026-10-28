@@ -42,7 +42,7 @@ one on the fly and runs the main path on it end to end. You need no EE access fo
    nothing, then the real run with `--with-infra-env`. It checks the result and runs `scripts/verify-leftovers.sh`.
 4. It deletes the stubs and builds the result with Maven Central only (`mvn -B -DskipTests verify`).
 
-Run it from the pack root (`services/c7/`):
+Run it from the pack root (`services/c7/operaton/`):
 
 ```bash
 tools/test-boot4-path.sh                                           # Spring Boot 4.0.8 -> Operaton 2.1.5
@@ -71,7 +71,7 @@ How the main path works on your own service: [OpenRewrite recipes](../docs/03-op
 You can repeat the migration of the committed example yourself and compare the result with the committed "after"
 app. Because the legacy app runs on Spring Boot 3.5, its code reaches Operaton 2.x in two steps, called hops, as
 described in [Coming from Spring Boot 3.5: the two-hop path](../docs/15-coming-from-spring-boot-3.md). Run the
-commands from the pack root (`services/c7/`), on a scratch git copy of the legacy app (`migrate.sh` refuses dirty trees):
+commands from the pack root (`services/c7/operaton/`), on a scratch git copy of the legacy app (`migrate.sh` refuses dirty trees):
 
 ```bash
 rsync -a --exclude target examples/camunda7-spring-boot-legacy/ /tmp/orders/

@@ -10,7 +10,7 @@ set -euo pipefail
 # Layout: starter-pack repository (rewrite/rewrite.yml, docs/) or the bundled Claude skill (assets/rewrite.yml
 # next to scripts/, no docs/) -> doc links point to the guide on GitHub.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-GUIDE_URL="https://github.com/Miragon/migration-recipies/blob/main/services/c7"
+GUIDE_URL="https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton"
 if [ -d "$SCRIPT_DIR/../assets" ] && [ ! -d "$SCRIPT_DIR/../docs" ]; then
   DOCS="$GUIDE_URL/docs"; REWRITE_REL="assets/rewrite.yml"
 else

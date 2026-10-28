@@ -41,7 +41,7 @@ EOF
 # Layout: starter-pack repository (docs/, sql/ next to scripts/) or the bundled Claude skill (assets/ next to
 # scripts/, no docs/) -> chapter links point to the guide on GitHub, SQL paths to assets/sql/.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
-GUIDE_URL="https://github.com/Miragon/migration-recipies/blob/main/services/c7"
+GUIDE_URL="https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton"
 if [ -d "$SCRIPT_DIR/../assets" ] && [ ! -d "$SCRIPT_DIR/../docs" ]; then
   DOCS="$GUIDE_URL/docs"; SQL_DIR="assets/sql/postgresql"
 else

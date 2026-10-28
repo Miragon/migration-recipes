@@ -2,9 +2,9 @@
 
 Reference for `cutover` mode: what to generate for humans, the condensed cut-over and rollback runbooks, and the
 D15 hard/soft stops. Sources (read them when tailoring):
-[11 · Cut-over, rollback and operations](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/11-cutover-rollback-and-operations.md),
-[cut-over runbook](https://github.com/Miragon/migration-recipies/blob/main/services/c7/checklists/cutover-runbook.md)
-(the step IDs below are the same), [01 · D7/D15](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#d15).
+[11 · Cut-over, rollback and operations](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/11-cutover-rollback-and-operations.md),
+[cut-over runbook](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/checklists/cutover-runbook.md)
+(the step IDs below are the same), [01 · D7/D15](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#d15).
 
 ## Contents
 

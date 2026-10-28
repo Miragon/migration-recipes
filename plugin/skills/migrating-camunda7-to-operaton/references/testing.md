@@ -2,7 +2,7 @@
 
 Load this for the baseline (step 3), test fixes after the recipe run (step 4; Spring Boot 3.5 path: after each hop,
 step 5), and the verification step (step 6). Most migration breakage is silent (scripts compile at runtime, unrenamed
-keys are ignored, payload class names change), so tests must *execute* those paths. Guide chapter: https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/10-testing.md
+keys are ignored, payload class names change), so tests must *execute* those paths. Guide chapter: https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/10-testing.md
 
 ## Contents
 
@@ -255,7 +255,7 @@ void rolledBackTransactionPublishesNoEvents() {
    Commit test: inside the template, nothing is published yet; after it, events exist. Exactly-once: the process-instance
    `start` event appears once. Publisher failure: a throwing publisher must not reach the caller. Reference implementation:
    `assets/snippets/test/ExportingHistoryEventHandlerTest.java` (chapter 06,
-   [Testing plugins and exporters](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/06-engine-plugins-and-history-exporters.md#14-testing-plugins-and-exporters)).
+   [Testing plugins and exporters](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/06-engine-plugins-and-history-exporters.md#14-testing-plugins-and-exporters)).
 4. **Envelope contract test** against a checked-in JSON file; no engine class name outside a deliberate field (the frozen
    `eventClass` of the D9 v2 envelope).
 5. Consumers: test with recorded payloads from **both** engines (dual-read).

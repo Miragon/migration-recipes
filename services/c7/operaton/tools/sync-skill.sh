@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copies the canonical toolkit files of this guide (services/c7/) into the self-contained agent skill of the plugin
+# Copies the canonical toolkit files of this guide (services/c7/operaton/) into the self-contained agent skill of the plugin
 # (plugin/skills/migrating-camunda7-to-operaton/, for Claude Code and GitHub Copilot).
 #   tools/sync-skill.sh          copy
 #   tools/sync-skill.sh --check  exit 1 if the skill copies differ from the (transformed) canonical files, or if the
@@ -9,18 +9,18 @@
 #                                from the user's words)
 #
 # Markdown files are not copied verbatim: their relative links are rewritten to absolute GitHub URLs of the
-# guide (https://github.com/Miragon/migration-recipies/blob/main/services/c7/<guide path>), because docs/, examples/,
+# guide (https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/<guide path>), because docs/, examples/,
 # checklists/ and sql/test/ are not part of the skill. Links to files that the skill carries at the same
 # relative position (e.g. postgresql/*.sql next to assets/sql/README.md) and #anchors stay relative.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"                 # the guide: services/c7
-REPO="$(cd "$ROOT/../.." && pwd)"                         # the repository root
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"                 # the guide: services/c7/operaton
+REPO="$(cd "$ROOT/../../.." && pwd)"                      # the repository root
 SKILL="$REPO/plugin/skills/migrating-camunda7-to-operaton"
 EX="examples/operaton-spring-boot-migrated/src/main/java/com/example/orders"
 EXT="examples/operaton-spring-boot-migrated/src/test/java/com/example/orders"
-GH_GUIDE="https://github.com/Miragon/migration-recipies"   # + /blob|tree/main/services/c7/<guide path>
-GUIDE_PREFIX="services/c7"
+GH_GUIDE="https://github.com/Miragon/migration-recipies"   # + /blob|tree/main/services/c7/operaton/<guide path>
+GUIDE_PREFIX="services/c7/operaton"
 CHECK=0
 [ "${1:-}" = "--check" ] && CHECK=1
 

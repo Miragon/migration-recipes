@@ -2,7 +2,7 @@
 
 Load this for schema checks, Liquibase/Flyway setups, Java-serialized variables, SQL files that touch `ACT_*` tables, and
 when preparing the SQL part of the cut-over pack. Guide chapter:
-https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/08-database-schema-data-and-sql-scripts.md
+https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/08-database-schema-data-and-sql-scripts.md
 SQL toolkit details (when to run what, porting table, pitfalls): `assets/sql/README.md` (bundled).
 
 ## Contents
@@ -317,7 +317,7 @@ instances have not passed that step; `operaton-forms:` versions with open tasks;
 `org.operaton.*` classes. **Soft stops:** Liquibase Fix D (reverse it), edited/deleted `camunda-admin` rows, a deleted
 Camunda EE license (restore it). Harmless: `operaton.installation.id`, `operaton-admin` rows, history rows, the `7.25.0`
 schema-log row. Checkpoint queries C1–C3:
-[cut-over runbook, R2-1](https://github.com/Miragon/migration-recipies/blob/main/services/c7/checklists/cutover-runbook.md#compatibility-checkpoint-c1c3);
+[cut-over runbook, R2-1](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/checklists/cutover-runbook.md#compatibility-checkpoint-c1c3);
 runbook placement: references/cutover.md. No mixed Camunda/Operaton clusters (D7): Kubernetes `Recreate` or scale to 0.
 
 ## 12. Done criteria

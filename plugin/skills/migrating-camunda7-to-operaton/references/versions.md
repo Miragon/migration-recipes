@@ -4,9 +4,9 @@
 
 This is the only file in the skill that holds dated version numbers. Other files say "see references/versions.md".
 Refresh with `scripts/latest-versions.sh` before you pin anything (section 5). Full background:
-[01 · Version matrix](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/01-migration-path-and-decisions.md#2-version-and-compatibility-matrix),
-[12 · Operaton 2 and Spring Boot 4](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/12-operaton-2-and-spring-boot-4.md),
-Spring Boot 3.5 path: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/15-coming-from-spring-boot-3.md).
+[01 · Version matrix](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/01-migration-path-and-decisions.md#2-version-and-compatibility-matrix),
+[12 · Operaton 2 and Spring Boot 4](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/12-operaton-2-and-spring-boot-4.md),
+Spring Boot 3.5 path: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/15-coming-from-spring-boot-3.md).
 
 ## Contents
 
@@ -79,7 +79,7 @@ patch script is known (one would add a `7.24.N` schema-log row, id 1301–1399).
 | October 2026 environment update | Oct 2026 | ends EE support for Spring Boot 3.5, Spring 6 and Java 11 |
 
 Script engines are **not shipped** and **not managed by `operaton-bom`**. Tested versions (Operaton's `parent/pom.xml` at
-each tag; chapter [05 · Script engines](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/05-bpmn-dmn-forms-and-scripts.md#script-engines)):
+each tag; chapter [05 · Script engines](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/05-bpmn-dmn-forms-and-scripts.md#script-engines)):
 
 | Engine | Camunda 7.24.0 | Operaton 1.1.5 | Operaton 2.1.5 | Operaton 2.2.0-RC1 | Who manages the version in your build |
 |---|---|---|---|---|---|
@@ -181,7 +181,7 @@ How to act on the output:
 | Output says | Do |
 |---|---|
 | a newer patch on the 2.x line you target | target it: `migrate.sh --target <v>` (Spring Boot 3.5 path: `--hop 2 --target <v>`) reads the paired Spring Boot from `operaton-root-<v>.pom` |
-| the Spring Boot 4.1 row shows a GA (2.2.x) | Spring Boot 4.1 projects: switch from `2.2.0-RC1` to the GA (`--target 2.2.0`), re-run the final rehearsal on it. Spring Boot 4.0 projects: target it after a Spring Boot 4.1 upgrade (own commit). Spring Boot 3.5 path: target it if go-live is after its GA (section 3); `migrate.sh` warns that the Hop 2 recipe list is written for Spring Boot 4.0: afterwards run `org.openrewrite.java.spring.boot4.SpringBootProperties_4_1` and follow [12 · Moving from 2.1.x to 2.2.x](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/12-operaton-2-and-spring-boot-4.md#moving-from-21x-to-22x) |
+| the Spring Boot 4.1 row shows a GA (2.2.x) | Spring Boot 4.1 projects: switch from `2.2.0-RC1` to the GA (`--target 2.2.0`), re-run the final rehearsal on it. Spring Boot 4.0 projects: target it after a Spring Boot 4.1 upgrade (own commit). Spring Boot 3.5 path: target it if go-live is after its GA (section 3); `migrate.sh` warns that the Hop 2 recipe list is written for Spring Boot 4.0: afterwards run `org.openrewrite.java.spring.boot4.SpringBootProperties_4_1` and follow [12 · Moving from 2.1.x to 2.2.x](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/12-operaton-2-and-spring-boot-4.md#moving-from-21x-to-22x) |
 | `<release>` is a pre-release | expected; pin explicitly, never follow it |
 | tooling newer than pinned | keep the pins unless the user asks; newer OpenRewrite artifacts may not resolve from public repositories |
 | a newer 1.1.x | impossible by policy (1.x is EOL); if it happens, re-read `SECURITY.md` before changing Hop 1 |
@@ -203,5 +203,5 @@ mvn -B dependency:tree -Dincludes=org.scala-lang,com.fasterxml.jackson.module   
 - Keep bots off pre-releases and Spring Boot minors: Renovate `allowedVersions` excluding `-M`/`-RC`, Dependabot
   `ignore` for `spring-boot-starter-parent` minor/major, and the CI guard that compares `project.parent.version` with
   `version.spring-boot` of `operaton-root-<operaton.version>.pom`. Ready-made configs:
-  [12 · Keeping up afterwards](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/12-operaton-2-and-spring-boot-4.md#7-keeping-up-afterwards).
+  [12 · Keeping up afterwards](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/12-operaton-2-and-spring-boot-4.md#7-keeping-up-afterwards).
 - A pipeline rule that rejects production releases with an Operaton 1.x dependency keeps the checkpoint out of production.

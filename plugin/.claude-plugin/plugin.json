@@ -6,7 +6,7 @@
   "author": {
     "name": "Miragon"
   },
-  "homepage": "https://github.com/Miragon/migration-recipies/tree/main/services/c7",
+  "homepage": "https://github.com/Miragon/migration-recipies/tree/main/services/c7/operaton",
   "repository": "https://github.com/Miragon/migration-recipies",
   "license": "Apache-2.0",
   "keywords": ["camunda", "camunda-7", "operaton", "migration", "openrewrite", "spring-boot", "bpmn"]

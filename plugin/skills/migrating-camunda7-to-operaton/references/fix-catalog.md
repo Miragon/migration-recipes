@@ -6,16 +6,16 @@ Applies to both paths: the Spring Boot 4 path (one run, `MigrateSpringBoot4App`)
 Hop 2). Rows that only concern one path say so.
 
 Guide chapters (read when an entry is not enough):
-[03 recipes](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/03-openrewrite-recipes.md) ·
-[04 config](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/04-spring-boot-dependencies-and-configuration.md) ·
-[05 models](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/05-bpmn-dmn-forms-and-scripts.md) ·
-[06 plugins](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/06-engine-plugins-and-history-exporters.md) ·
-[10 testing](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/10-testing.md) ·
-[12 Operaton 2 and Spring Boot 4](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/12-operaton-2-and-spring-boot-4.md) ·
-[13 troubleshooting](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/13-tips-tricks-and-troubleshooting.md) ·
-[07 security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/07-identity-admin-group-and-security.md) and
-[09 webapps](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/09-webapps-rest-api-and-clients.md) for Camunda EE (D17) ·
-[15 Spring Boot 3.5 path](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/15-coming-from-spring-boot-3.md).
+[03 recipes](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/03-openrewrite-recipes.md) ·
+[04 config](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/04-spring-boot-dependencies-and-configuration.md) ·
+[05 models](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/05-bpmn-dmn-forms-and-scripts.md) ·
+[06 plugins](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/06-engine-plugins-and-history-exporters.md) ·
+[10 testing](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/10-testing.md) ·
+[12 Operaton 2 and Spring Boot 4](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/12-operaton-2-and-spring-boot-4.md) ·
+[13 troubleshooting](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/13-tips-tricks-and-troubleshooting.md) ·
+[07 security](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/07-identity-admin-group-and-security.md) and
+[09 webapps](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/09-webapps-rest-api-and-clients.md) for Camunda EE (D17) ·
+[15 Spring Boot 3.5 path](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/15-coming-from-spring-boot-3.md).
 Versions: see references/versions.md.
 
 ## Contents

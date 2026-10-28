@@ -3,7 +3,7 @@
 Load this when the project contains a `ProcessEnginePlugin`, a `HistoryEventHandler` or other exporter, custom
 incident/job handlers, parse listeners, serializers, `META-INF/services` or `spring.factories` entries, Spin
 configurators, or an identity provider (LDAP, Keycloak, OAuth2, custom). Guide chapter:
-https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/06-engine-plugins-and-history-exporters.md
+https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/06-engine-plugins-and-history-exporters.md
 
 ## Contents
 
@@ -164,7 +164,7 @@ call stalls engine threads. Same on Camunda 7; fix it in this migration because 
 For an outbox (option C): `JdbcTemplate` on the **same** `DataSource` as the engine (joins the Spring-managed engine
 transaction; if the engine uses a separate `operatonBpmDataSource`, use that one), insert `(id, topic, msg_key, payload)` in
 `handleEvent`, relay with `select … for update skip locked` or Debezium's outbox router. Table DDL: chapter 06,
-[Transactional outbox](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/06-engine-plugins-and-history-exporters.md#54-transactional-outbox).
+[Transactional outbox](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/06-engine-plugins-and-history-exporters.md#54-transactional-outbox).
 
 Never publish raw engine entities from an `AFTER_COMMIT` listener: the engine mutates them in place (`start` arrives as `end`).
 Do not use `HistoryEvent.getId()` as a mandatory idempotency key (can be `null` in the handler); generate your own message id.
@@ -237,7 +237,7 @@ coordinated way; (5) each consumer owner signs off (cut-over gate); after the ro
 `eventClass` and the v1 path.
 Jackson default-typing consumers on Operaton jars can read old payloads with a `DeserializationProblemHandler` that maps
 `org.camunda.bpm.` type ids to `org.operaton.bpm.` (consumer steps: chapter 06,
-[Consumer cut-over plan](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/06-engine-plugins-and-history-exporters.md#64-consumer-cut-over-plan)).
+[Consumer cut-over plan](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/06-engine-plugins-and-history-exporters.md#64-consumer-cut-over-plan)).
 
 ## 7. Spring event bridge
 

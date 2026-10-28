@@ -2,9 +2,9 @@
 
 Operaton ships a patch every month and a minor every six months, so this pack goes stale without help. Corrections are welcome.
 
-This guide lives in `services/c7/` of the repository, and its agent skill in `plugin/skills/`. Run the commands below
-from `services/c7/`; paths in this file are relative to it, except `plugin/…` and `.github/…`, which are relative to
-the repository root.
+This guide lives in `services/c7/operaton/` of the repository, and its agent skill in `plugin/skills/`. Run the commands
+below from `services/c7/operaton/`; paths in this file are relative to it, except `plugin/…` and `.github/…`, which
+are relative to the repository root.
 
 ## Rules
 
@@ -19,7 +19,7 @@ these steps for every new Operaton, recipe or plugin release:
 
 1. Run `scripts/latest-versions.sh`: latest releases (Operaton lines with their Spring Boot version, recipe, plugins) vs. the pins.
 2. Update the pinned defaults in `scripts/migrate.sh` and `rewrite/rewrite.yml`, the version tables in `README.md`, `docs/01` and
-   `plugin/skills/migrating-camunda7-to-operaton/references/versions.md`, and every date: `grep -rniE "(as of|checked on) 20" . ../../plugin`
+   `plugin/skills/migrating-camunda7-to-operaton/references/versions.md`, and every date: `grep -rniE "(as of|checked on) 20" . ../../../plugin`
 3. Re-run the example migration as in [`examples/README.md`](examples/README.md#reproduce-the-migration) and update
    `examples/operaton-spring-boot-migrated/MIGRATION_REPORT.md`. Run `tools/test-boot4-path.sh` for both Spring Boot
    lines (see the checks below), because the example covers only the Spring Boot 3.5 path.
@@ -44,7 +44,7 @@ Then run `tools/sync-skill.sh` and the checks below.
 CI runs all of these checks except `claude plugin validate`, so run them locally first:
 
 ```bash
-python3 tools/check-links.py ../..                 # relative links and #anchors in the whole repository
+python3 tools/check-links.py ../../..              # relative links and #anchors in the whole repository
 for f in scripts/*.sh tools/*.sh; do bash -n "$f"; done   # syntax (as in CI)
 shellcheck --severity=error scripts/*.sh tools/*.sh       # as in CI (if you have ShellCheck)
 tools/sync-skill.sh --check                        # skill assets in sync with the canonical files, and the skill is portable
@@ -54,8 +54,8 @@ scripts/verify-leftovers.sh examples/operaton-spring-boot-migrated
 tools/test-boot4-path.sh --spring-boot 4.0.8 --target 2.1.5       # Spring Boot 4 path, Spring Boot 4.0 line
 tools/test-boot4-path.sh --spring-boot 4.1.1 --target 2.2.0-RC1   # Spring Boot 4.1 line (2.2.0 once GA)
 (cd sql/test && npm ci && node test.mjs)            # SQL against the Operaton PostgreSQL DDL (PGlite)
-claude plugin validate ../..                        # marketplace manifest (if you have Claude Code)
-claude plugin validate ../../plugin                 # plugin manifest
+claude plugin validate ../../..                     # marketplace manifest (if you have Claude Code)
+claude plugin validate ../../../plugin              # plugin manifest
 ```
 
 `tools/test-boot4-path.sh` tests the Spring Boot 4 path end to end against a stub Camunda EE repository, so you need

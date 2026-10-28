@@ -1,8 +1,8 @@
 # Recipes: IDs, order, `migrate.sh`, review and troubleshooting
 
-Guide chapter: https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/03-openrewrite-recipes.md
-Operaton 2.x details: [12 · Operaton 2 and Spring Boot 4](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/12-operaton-2-and-spring-boot-4.md).
-Spring Boot 3.5 path: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/docs/15-coming-from-spring-boot-3.md).
+Guide chapter: https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/03-openrewrite-recipes.md
+Operaton 2.x details: [12 · Operaton 2 and Spring Boot 4](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/12-operaton-2-and-spring-boot-4.md).
+Spring Boot 3.5 path: [15 · Coming from Spring Boot 3.5](https://github.com/Miragon/migration-recipies/blob/main/services/c7/operaton/docs/15-coming-from-spring-boot-3.md).
 Tool and Operaton versions: see references/versions.md (the `migrate.sh --help` defaults are the pinned values).
 
 ## Contents
