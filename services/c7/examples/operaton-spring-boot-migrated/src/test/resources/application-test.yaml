@@ -1,0 +1,19 @@
+# Test overrides (profile "test").
+#
+# MIGRATED: test configuration is YAML too ("camunda.bpm.job-execution.enabled" ->
+# "operaton.bpm.job-execution.enabled"). A forgotten key would start the job executor in tests,
+# where it races with the manual execute(job()) calls -> flaky tests instead of a clear failure.
+spring:
+  datasource:
+    url: jdbc:h2:mem:camunda-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+
+logging:
+  level:
+    com.example.orders: INFO
+
+operaton:
+  bpm:
+    job-execution:
+      enabled: false
+    metrics:
+      enabled: false

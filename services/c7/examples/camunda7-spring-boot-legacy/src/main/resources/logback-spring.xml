@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MIGRATION HOTSPOT: logger names are Java package names. After the migration the engine logs
+  under org.operaton.bpm.*, so the <logger> entries below (and any log-shipping filters,
+  alerting rules or dashboards keyed on "org.camunda") silently stop matching.
+-->
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <property name="CONSOLE_LOG_PATTERN"
+            value="%d{HH:mm:ss.SSS} %-5level [%thread] [pi=%X{processInstanceId} act=%X{activityId}] %logger{36} - %msg%n"/>
+  <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+  <!-- Job executor acquisition/execution -->
+  <logger name="org.camunda.bpm.engine.jobexecutor" level="INFO"/>
+  <!-- "ENGINE-16004 Exception while closing command context" (+ stack trace) is logged at ERROR
+       by the context logger for every failing job attempt. Teams often silence it and rely on
+       incidents/their IncidentHandler instead. After the migration this line no longer matches
+       and the noise (and possibly alerts on ERROR logs) comes back. -->
+  <logger name="org.camunda.bpm.engine.context" level="OFF"/>
+  <!-- Script engine / Spin -->
+  <logger name="org.camunda.bpm.engine.script" level="INFO"/>
+  <logger name="org.camunda.spin" level="INFO"/>
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</configuration>

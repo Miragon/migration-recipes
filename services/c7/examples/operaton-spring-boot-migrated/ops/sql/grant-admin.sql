@@ -1,0 +1,14 @@
+-- =============================================================================================
+-- REPLACED (decisions D5, D10) - this file intentionally contains no executable SQL any more.
+--
+-- The Camunda-era version did:  INSERT INTO ACT_ID_MEMBERSHIP (USER_ID_, GROUP_ID_) VALUES ('jane.ops', 'camunda-admin');
+-- In Operaton the admin group is 'operaton-admin' (Groups.OPERATON_ADMIN); 'camunda-admin' grants no admin
+-- status any more. On a migrated database nobody is in 'operaton-admin' until the data is migrated, and
+-- the Admin webapp setup endpoint is OPEN in that state.
+--
+-- Use instead:
+--   Startup  com.example.orders.migration.AdminGroupMigrationPlugin mirrors camunda-admin members and
+--            authorizations to operaton-admin before the web server accepts requests (idempotent).
+--   DBA      starter pack sql/postgresql/10-migrate-admin-group.sql (before the first Operaton start)
+--   One user REST PUT /engine-rest/group/operaton-admin/members/jane.ops  (or the Admin webapp)
+-- =============================================================================================

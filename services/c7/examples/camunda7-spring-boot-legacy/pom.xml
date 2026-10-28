@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Legacy Camunda 7.24 CE Spring Boot application - the BEFORE state of the
+  Camunda 7 -> Operaton migration starter pack.
+
+  MIGRATION HOTSPOT (build): every org.camunda.* coordinate below has to be
+  replaced by its org.operaton.* counterpart, and the Spring Boot version has to
+  match the one the target Operaton release is built/tested against.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Camunda 7.24.0 is built and tested against Spring Boot 3.5.5
+    (see version.spring-boot in org.camunda.bpm:camunda-parent:7.24.0).
+  -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.5</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.example</groupId>
+  <artifactId>camunda7-spring-boot-legacy</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Order Fulfillment (legacy Camunda 7.24 CE)</name>
+  <description>Deliberately "legacy" Camunda 7 Spring Boot application used as the migration starting point.</description>
+
+  <properties>
+    <java.version>17</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- MIGRATION HOTSPOT: 7.24.0 is the last Camunda 7 CE release on Maven Central. -->
+    <camunda.version>7.24.0</camunda.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- MIGRATION HOTSPOT: BOM import org.camunda.bpm:camunda-bom -> org.operaton.bpm:operaton-bom -->
+      <dependency>
+        <groupId>org.camunda.bpm</groupId>
+        <artifactId>camunda-bom</artifactId>
+        <version>${camunda.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Engine + Cockpit/Tasklist/Admin webapps (served under camunda.bpm.webapp.application-path) -->
+    <dependency>
+      <groupId>org.camunda.bpm.springboot</groupId>
+      <artifactId>camunda-bpm-spring-boot-starter-webapp</artifactId>
+    </dependency>
+    <!-- REST API under /engine-rest -->
+    <dependency>
+      <groupId>org.camunda.bpm.springboot</groupId>
+      <artifactId>camunda-bpm-spring-boot-starter-rest</artifactId>
+    </dependency>
+
+    <!-- Spin: JSON variables + S() in scripts. Auto-registered by the starter. -->
+    <dependency>
+      <groupId>org.camunda.bpm</groupId>
+      <artifactId>camunda-engine-plugin-spin</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.camunda.spin</groupId>
+      <artifactId>camunda-spin-dataformat-json-jackson</artifactId>
+    </dependency>
+    <!-- Used by the Spin DataFormatConfigurator (Java time support for JSON variables) -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+
+    <!-- Groovy JSR-223 engine for the inline script task -->
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy-jsr223</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- ===================== test ===================== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      MIGRATION HOTSPOT: camunda-bpm-assert (managed by camunda-bom, needs AssertJ which
+      spring-boot-starter-test provides). Operaton ships it as operaton-bpm-assert.
+    -->
+    <dependency>
+      <groupId>org.camunda.bpm</groupId>
+      <artifactId>camunda-bpm-assert</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

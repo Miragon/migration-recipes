@@ -1,0 +1,77 @@
+# Legacy Camunda 7.24 CE configuration.
+#
+# MIGRATION HOTSPOT: every key below "camunda.bpm" is bound by the Camunda Spring Boot
+# starter. Operaton binds "operaton.bpm.*" instead. Keys that are not migrated are NOT an
+# error - Spring Boot just ignores them and the engine silently runs with defaults
+# (no admin user, different webapp path, no eventing, default history level, ...).
+
+spring:
+  application:
+    name: order-fulfillment
+  datasource:
+    # MIGRATION HOTSPOT (cosmetic): DB/schema names often contain "camunda". Renaming them is
+    # optional - Operaton uses the same ACT_* schema - so keep the existing database.
+    url: jdbc:h2:mem:camunda;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    username: sa
+    password: ""
+
+server:
+  port: 8080
+
+orders:
+  server-base-url: http://localhost:8080
+
+camunda:
+  bpm:
+    # Admin user is created on startup and added to group "camunda-admin" (Groups.CAMUNDA_ADMIN).
+    admin-user:
+      id: demo
+      password: demo
+      first-name: Demo
+      last-name: Administrator
+      email: demo@example.com
+    filter:
+      create: All tasks
+    webapp:
+      # Explicit legacy path. Operaton's default is /operaton - keeping /camunda after the
+      # migration is possible but must then be configured under the new prefix.
+      application-path: /camunda
+      index-redirect-enabled: true
+    database:
+      schema-update: true
+      type: h2
+    history-level: full
+    default-serialization-format: application/json
+    job-execution:
+      enabled: true
+      core-pool-size: 3
+      max-pool-size: 10
+      lock-time-in-millis: 300000
+    authorization:
+      enabled: false
+    eventing:
+      task: true
+      execution: true
+      history: true
+    metrics:
+      enabled: true
+      db-reporter-activate: false
+    generic-properties:
+      properties:
+        enforceHistoryTimeToLive: true
+        historyTimeToLive: P180D
+        javaSerializationFormatEnabled: false
+        # Default is "[a-zA-Z0-9]+|camunda-admin" - extended for our hyphenated "order-ops" group.
+        # MIGRATION HOTSPOT: the literal "camunda-admin" in this regex. Operaton's admin group is
+        # "operaton-admin"; if the pattern is migrated as a key but not as a value, creating the
+        # admin group fails at startup ("... is not a valid resource identifier").
+        groupResourceWhitelistPattern: "[a-zA-Z0-9]+|camunda-admin|order-ops"
+
+logging:
+  level:
+    # MIGRATION HOTSPOT: logger categories are package names -> org.operaton.bpm.* afterwards.
+    org.camunda.bpm.engine.jobexecutor: INFO
+    org.camunda.bpm.engine.incident: INFO
+    org.camunda.bpm.spring.boot: INFO
+    org.camunda.bpm.engine.impl.persistence.entity: WARN
+    com.example.orders: DEBUG

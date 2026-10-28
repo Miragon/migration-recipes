@@ -1,0 +1,17 @@
+{
+  "name": "starterpack-sql-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tests the PostgreSQL scripts in ../postgresql against the real Camunda 7.24 / Operaton create scripts, using PGlite (PostgreSQL compiled to WASM, no Docker needed).",
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

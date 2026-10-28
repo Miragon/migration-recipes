@@ -1,0 +1,14 @@
+-- =============================================================================================
+-- REPLACED (decision D10) - this file intentionally contains no executable SQL any more.
+--
+-- The Camunda-era version did:  DELETE FROM ACT_RU_INCIDENT WHERE INCIDENT_TYPE_ = 'failedJob' ...
+-- Deleting incidents leaves ACT_HI_INCIDENT open, breaks Cockpit statistics and does not fix the
+-- failing job (it fails again). Incidents are resolved by fixing the cause and retrying.
+--
+-- Use instead:
+--   Java   com.example.orders.operations.IncidentRecoveryService#openIncidents (read side),
+--          #annotateIncident (ops trail, ticket number), #retryJob / #retryExternalTask (resolves)
+--   REST   GET /engine-rest/incident?processDefinitionKeyIn=order-fulfillment&sortBy=incidentTimestamp&sortOrder=asc
+--          PUT /engine-rest/incident/{id}/annotation   {"annotation": "OPS-4711 ..."}
+--   Abandoned instances: delete the PROCESS INSTANCE via the API (history and listeners stay consistent).
+-- =============================================================================================

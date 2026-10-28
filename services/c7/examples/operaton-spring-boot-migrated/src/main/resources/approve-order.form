@@ -1,0 +1,45 @@
+{
+  "components": [
+    {
+      "label": "Order",
+      "type": "textfield",
+      "layout": { "row": "Row_1", "columns": null },
+      "id": "Field_OrderId",
+      "key": "orderId",
+      "disabled": true
+    },
+    {
+      "label": "Amount",
+      "type": "number",
+      "layout": { "row": "Row_1", "columns": null },
+      "id": "Field_Amount",
+      "key": "amount",
+      "disabled": true
+    },
+    {
+      "label": "Discount (%)",
+      "type": "number",
+      "layout": { "row": "Row_2", "columns": null },
+      "id": "Field_Discount",
+      "key": "discount",
+      "disabled": true
+    },
+    {
+      "label": "Approve order?",
+      "type": "checkbox",
+      "layout": { "row": "Row_3", "columns": null },
+      "id": "Field_Approved",
+      "key": "approved",
+      "defaultValue": false
+    }
+  ],
+  "type": "default",
+  "id": "approve-order",
+  "executionPlatform": "Camunda Platform",
+  "executionPlatformVersion": "7.24.0",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.28.0"
+  },
+  "schemaVersion": 16
+}

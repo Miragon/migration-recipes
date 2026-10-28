@@ -1,0 +1,13 @@
+{
+  "name": "operaton-migration",
+  "displayName": "Camunda 7 → Operaton Migration",
+  "version": "1.1.0",
+  "description": "Starter pack for migrating Spring Boot applications with an embedded Camunda 7 engine to Operaton 2.x: Camunda 7.24 EE on Spring Boot 4 in one recipe run (Spring Boot 3.5 via two hops). Assessment, OpenRewrite recipes, leftover and Camunda EE fixes, admin-group and database scripts, cut-over runbook and verification. Skill written for Claude Code and GitHub Copilot agents.",
+  "author": {
+    "name": "Miragon"
+  },
+  "homepage": "https://github.com/Miragon/migration-recipies/tree/main/services/c7",
+  "repository": "https://github.com/Miragon/migration-recipies",
+  "license": "Apache-2.0",
+  "keywords": ["camunda", "camunda-7", "operaton", "migration", "openrewrite", "spring-boot", "bpmn"]
+}

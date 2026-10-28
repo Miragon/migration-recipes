@@ -1,0 +1,14 @@
+{
+  "name": "migration-recipies",
+  "description": "Agent plugins for migrating process engines: Camunda 7 → Operaton",
+  "owner": {
+    "name": "Miragon"
+  },
+  "plugins": [
+    {
+      "name": "operaton-migration",
+      "source": "./plugin",
+      "description": "Skill + toolkit for migrating embedded Camunda 7 (Spring Boot) applications to Operaton"
+    }
+  ]
+}
