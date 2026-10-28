@@ -1,0 +1,83 @@
+# Operaton configuration (migrated from Camunda 7.24 CE).
+#
+# MIGRATED: "camunda.bpm.*" became "operaton.bpm.*" (official recipe, ChangeSpringPropertyKey).
+# Leftover camunda.bpm.* keys or CAMUNDA_BPM_* env vars would be ignored silently -
+# migration.LegacyCamundaConfigGuard makes the app fail fast instead.
+
+spring:
+  application:
+    name: order-fulfillment
+  datasource:
+    # Kept on purpose: the DB/schema name may contain "camunda" - Operaton uses the same ACT_* schema
+    # (7.24.0), so the existing database is reused as is.
+    url: jdbc:h2:mem:camunda;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+    username: sa
+    password: ""
+
+server:
+  port: 8080
+
+orders:
+  server-base-url: http://localhost:8080
+  # Migration helpers (package com.example.orders.migration) - remove after the rollback window.
+  migration:
+    admin-group:
+      enabled: true              # D5: mirror camunda-admin members + authorizations to operaton-admin at startup
+    legacy-config-guard:
+      enabled: true              # fail fast on leftover camunda.bpm.* / CAMUNDA_BPM_* / management.health.camunda.*
+    legacy-webapp-redirect:
+      enabled: false             # D6: switch on together with operaton.bpm.webapp.application-path=/operaton
+
+logging:
+  level:
+    # MIGRATED: logger categories are package names (org.camunda.bpm.* -> org.operaton.bpm.*).
+    org.operaton.bpm.engine.jobexecutor: INFO
+    org.operaton.bpm.engine.incident: INFO
+    org.operaton.bpm.spring.boot: INFO
+    org.operaton.bpm.engine.impl.persistence.entity: WARN
+    com.example.orders: DEBUG
+
+operaton:
+  bpm:
+    # Admin user is created on a FRESH database and added to "operaton-admin" (Groups.OPERATON_ADMIN).
+    # It does NOT add an existing user to operaton-admin - migration.AdminGroupMigrationPlugin does (D5).
+    admin-user:
+      id: demo
+      password: demo
+      first-name: Demo
+      last-name: Administrator
+      email: demo@example.com
+    filter:
+      create: All tasks
+    webapp:
+      # Decision D6: keep the old URLs for the cut-over release. Operaton's default is /operaton.
+      application-path: /camunda
+      index-redirect-enabled: true
+    database:
+      schema-update: true
+      type: h2
+    history-level: full
+    default-serialization-format: application/json
+    job-execution:
+      enabled: true
+      core-pool-size: 3
+      max-pool-size: 10
+      lock-time-in-millis: 300000
+    authorization:
+      enabled: false
+    eventing:
+      task: true
+      execution: true
+      history: true
+    metrics:
+      enabled: true
+      db-reporter-activate: false
+    generic-properties:
+      properties:
+        enforceHistoryTimeToLive: true
+        historyTimeToLive: P180D
+        javaSerializationFormatEnabled: false
+        # Default is "[a-zA-Z0-9]+|operaton-admin" - extended for our hyphenated "order-ops" group.
+        # MIGRATED: the value said "camunda-admin"; starterpack.operaton.PostFixes rewrote it. Leaving it
+        # fails the startup: "Group has an invalid id: 'operaton-admin' is not a valid resource identifier".
+        groupResourceWhitelistPattern: "[a-zA-Z0-9]+|operaton-admin|order-ops"

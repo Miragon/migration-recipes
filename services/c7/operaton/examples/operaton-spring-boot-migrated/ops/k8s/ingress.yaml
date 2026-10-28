@@ -1,0 +1,47 @@
+# Path-based routing to the webapps and the REST API (/engine-rest is unchanged in Operaton).
+# KEPT (decision D6): /camunda/app/ and /camunda/api/ for the cut-over release. When the webapps move
+# to /operaton: add /operaton/app/ + /operaton/api/ rules first, switch the app, keep /camunda/app/
+# routed to the app (LegacyWebappPathRedirectFilter redirects GETs), update auth proxy/WAF rules.
+# MIGRATED: ConfigMap keys CAMUNDA_BPM_* -> OPERATON_BPM_* (starterpack.operaton.InfraEnvVars).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: order-fulfillment
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: orders.example.com
+      http:
+        paths:
+          - path: /camunda/app/
+            pathType: Prefix
+            backend:
+              service:
+                name: order-fulfillment
+                port:
+                  number: 8080
+          - path: /camunda/api/
+            pathType: Prefix
+            backend:
+              service:
+                name: order-fulfillment
+                port:
+                  number: 8080
+          - path: /engine-rest
+            pathType: Prefix
+            backend:
+              service:
+                name: order-fulfillment
+                port:
+                  number: 8080
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-fulfillment-env
+data:
+  OPERATON_BPM_ADMIN_USER_ID: admin
+  OPERATON_BPM_WEBAPP_APPLICATION_PATH: /camunda
+  OPERATON_BPM_JOB_EXECUTION_ENABLED: "true"

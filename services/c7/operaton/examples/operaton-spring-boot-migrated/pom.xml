@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Order fulfillment app after the Camunda 7.24 -> Operaton migration - the AFTER state of the
+  Camunda 7 -> Operaton migration starter pack (see MIGRATION_REPORT.md for how it was produced).
+
+  MIGRATED: every org.camunda.* coordinate was replaced by its org.operaton.* counterpart
+  (official recipe), the versions were aligned with the Operaton release (starter-pack recipe
+  AlignVersions / UpgradeToOperaton2) and camunda.version became operaton.version.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Keep Spring Boot at the version the Operaton release is built and tested with
+    (version.spring-boot in org.operaton.bpm:operaton-root:<operaton.version>):
+    Operaton 1.1.5 -> Spring Boot 3.5.16, Operaton 2.1.5 -> Spring Boot 4.0.8.
+  -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.0.8</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.example</groupId>
+  <artifactId>operaton-spring-boot-migrated</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Order Fulfillment (migrated to Operaton)</name>
+  <description>The legacy Camunda 7.24 example after the migration to Operaton with the starter-pack recipes and helpers.</description>
+
+  <properties>
+    <java.version>17</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- MIGRATED: was camunda.version 7.24.0 (renamed by starterpack.operaton.AlignVersions) -->
+    <operaton.version>2.1.5</operaton.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- MIGRATED: org.camunda.bpm:camunda-bom -> org.operaton.bpm:operaton-bom -->
+      <dependency>
+        <groupId>org.operaton.bpm</groupId>
+        <artifactId>operaton-bom</artifactId>
+        <version>${operaton.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Engine + Cockpit/Tasklist/Admin webapps (served under operaton.bpm.webapp.application-path) -->
+    <dependency>
+      <groupId>org.operaton.bpm.springboot</groupId>
+      <artifactId>operaton-bpm-spring-boot-starter-webapp</artifactId>
+    </dependency>
+    <!-- REST API under /engine-rest -->
+    <dependency>
+      <groupId>org.operaton.bpm.springboot</groupId>
+      <artifactId>operaton-bpm-spring-boot-starter-rest</artifactId>
+    </dependency>
+
+    <!-- Spin: JSON variables + S() in scripts. Auto-registered by the starter. -->
+    <dependency>
+      <groupId>org.operaton.bpm</groupId>
+      <artifactId>operaton-engine-plugin-spin</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.operaton.spin</groupId>
+      <artifactId>operaton-spin-dataformat-json-jackson</artifactId>
+    </dependency>
+    <!-- Used by the Spin DataFormatConfigurator (Java time support for JSON variables) -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+
+    <!-- Groovy JSR-223 engine for the inline script task -->
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy-jsr223</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- ===================== test ===================== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      MIGRATED: camunda-bpm-assert -> operaton-bpm-assert (official recipe). The starter below was
+      added by starterpack.operaton.PostFixes (decision D11); it also brings operaton-bpm-assert and
+      the operaton-engine junit5/junit6 test jar (ProcessEngineExtension), which this app does not
+      need yet but new tests can use.
+    -->
+    <dependency>
+      <groupId>org.operaton.bpm</groupId>
+      <artifactId>operaton-bpm-assert</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.operaton.bpm.springboot</groupId>
+      <artifactId>operaton-bpm-spring-boot-starter-test-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

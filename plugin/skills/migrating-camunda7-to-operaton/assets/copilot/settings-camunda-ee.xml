@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Minimal Maven settings for Camunda 7.24 EE builds (7.24.N-ee, camunda-bpm-spring-boot-starter-4*), part of the
+  migrating-camunda7-to-operaton skill.
+
+  Why: the rewrite-maven-plugin resolves every (test) dependency before a recipe runs, so migrating an EE build needs
+  the Camunda EE repository credentials. After the conversion nothing needs the EE repository any more.
+
+  No secret is stored in this file: Maven reads the credentials from the environment variables CAMUNDA_EE_USER and
+  CAMUNDA_EE_PASSWORD when it builds.
+  - Copilot cloud agent: copilot-setup-steps.yml (next to this file) installs it as ~/.m2/settings.xml of the
+    ephemeral runner when the repository's Agents secrets CAMUNDA_EE_USER and CAMUNDA_EE_PASSWORD exist.
+  - Locally or in other CI: export the two variables and pass the file to the skill's scripts with
+    MAVEN_ARGS="-s <path to this file>". It replaces your own settings (mirrors, other servers) for that run.
+
+  The server id camunda-bpm-nexus-ee is the one Camunda's documentation uses for the EE repository
+  (https://artifacts.camunda.com/artifactory/private/). If your POM declares the repository under another id, use that
+  id here. If your POM does not declare the repository at all, enable the profile at the end of this file.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <servers>
+    <server>
+      <id>camunda-bpm-nexus-ee</id>
+      <username>${env.CAMUNDA_EE_USER}</username>
+      <password>${env.CAMUNDA_EE_PASSWORD}</password>
+    </server>
+  </servers>
+  <!-- Only if your POM does not declare the Camunda EE repository itself:
+  <profiles>
+    <profile>
+      <id>camunda-ee</id>
+      <repositories>
+        <repository>
+          <id>camunda-bpm-nexus-ee</id>
+          <name>camunda-bpm-nexus</name>
+          <url>https://artifacts.camunda.com/artifactory/private/</url>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>camunda-ee</activeProfile>
+  </activeProfiles>
+  -->
+</settings>

@@ -1,0 +1,68 @@
+# Copilot cloud agent environment for the migrating-camunda7-to-operaton skill (Camunda 7 -> Operaton migration).
+#
+# Where it goes: copy this file to .github/workflows/copilot-setup-steps.yml of the APPLICATION repository (the one
+# Copilot migrates) and merge it into the default branch: Copilot reads it only from there. The skill directory must be
+# committed in that repository too (.github/skills/, .claude/skills/ or .agents/skills/; `gh skill install` uses
+# .agents/skills/).
+#
+# What Copilot uses: only the job "copilot-setup-steps" with its steps, permissions, runs-on, services, snapshot and
+# timeout-minutes (at most 59; a whole Copilot session ends after 59 minutes). If a step fails, Copilot skips the
+# remaining setup steps, so the optional steps below never fail.
+#
+# Camunda EE builds (7.24.N-ee, -4 starters) need the Camunda EE repository while the recipe runs:
+#   1. Repository Settings > Secrets and variables > Agents: add the secrets CAMUNDA_EE_USER and CAMUNDA_EE_PASSWORD.
+#      Copilot gets Agents secrets as environment variables; it cannot read Actions secrets.
+#   2. Repository Settings > Copilot > Internet access: add artifacts.camunda.com to the custom allowlist. The firewall
+#      applies to the agent's own commands (e.g. the recipe run), not to these setup steps. Maven Central and the Gradle
+#      plugin portal are on the recommended allowlist already.
+#   3. The step "Maven settings for the Camunda EE repository" installs the skill's settings-camunda-ee.xml, which reads
+#      both secrets from the environment (nothing secret is written to disk).
+# After the migration nothing needs the EE repository: remove the secrets and the allowlist entry.
+# Never put production credentials or production database access into Agents secrets.
+
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps: # the job MUST be called copilot-setup-steps, otherwise Copilot ignores it
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # at most 59
+    permissions:
+      contents: read
+    steps:
+      # Same action versions as the starter pack's own CI; newer majors exist, update them as your organisation requires.
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 with a Maven cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Maven settings for the Camunda EE repository (optional)
+        run: |
+          settings=$(find .github .claude .agents -path '*/migrating-camunda7-to-operaton/assets/copilot/settings-camunda-ee.xml' 2>/dev/null | head -n 1)
+          if [ -n "${CAMUNDA_EE_USER:-}" ] && [ -n "${CAMUNDA_EE_PASSWORD:-}" ] && [ -n "$settings" ]; then
+            mkdir -p ~/.m2
+            cp "$settings" ~/.m2/settings.xml
+            echo "Camunda EE settings installed from $settings (credentials are read from the environment)"
+          else
+            echo "No Camunda EE credentials or no settings template found: step skipped"
+          fi
+
+      - name: Warm the Maven cache (never fails)
+        # Resolves the project's dependencies once, so that the agent's first build is faster. Gradle projects:
+        # replace the command with ./gradlew --no-daemon dependencies.
+        run: |
+          if [ -x ./mvnw ]; then mvn_cmd=./mvnw; else mvn_cmd=mvn; fi
+          "$mvn_cmd" -B -q dependency:go-offline || echo "Warm-up incomplete: the agent resolves the rest during its own builds"

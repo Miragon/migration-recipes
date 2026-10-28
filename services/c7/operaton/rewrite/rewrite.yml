@@ -1,0 +1,720 @@
+# =====================================================================================================
+# Camunda 7 -> Operaton Migration Starter Pack: OpenRewrite composite recipes
+#
+# Spring Boot 4 path (main): Camunda 7.24 EE on Spring Boot 4 (-4 starters, 7.24.N-ee) -> Operaton 2.x
+#        starterpack.operaton.MigrateSpringBoot4App     one recipe run, one commit
+#        = Boot4PreFixes -> PreFixes -> org.operaton.rewrite.spring.MigrateSpringBootApplication (official,
+#          1.0.1) -> PostFixes -> ScriptImports -> AlignVersionsOperaton2
+# Spring Boot 3.5 path (two hops, see docs/15-coming-from-spring-boot-3.md):
+#   Hop 1  starterpack.operaton.MigrateSpringBootApp  Camunda 7.24 (Spring Boot 3.5) -> Operaton 1.1.x
+#          = PreFixes -> org.operaton.rewrite.spring.MigrateSpringBootApplication (official, 1.0.1)
+#            -> PostFixes -> ScriptImports -> AlignVersions
+#   Hop 2  starterpack.operaton.UpgradeToOperaton2    Operaton 1.1.x -> Operaton 2.1.x + Spring Boot 4.0
+# Opt.   starterpack.operaton.InfraEnvVars          CAMUNDA_BPM_* -> OPERATON_BPM_* in container/k8s files
+#        starterpack.operaton.FormKeys              camunda-forms: -> operaton-forms: in BPMN models
+#
+# Run it with scripts/migrate.sh (recommended) or see rewrite/README.md for the raw Maven commands.
+#   Spring Boot 4 path and Hop 1 need
+#                -Drewrite.recipeArtifactCoordinates=org.operaton:migrate-camunda-recipe:1.0.1,org.openrewrite.recipe:rewrite-spring:6.37.0
+#                (rewrite-spring 6.37.0 overrides the recipe's transitive 6.18.0 and keeps camunda: bpm: YAML nested)
+#   Hop 2 needs  -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-spring:6.37.0
+#   All need     -Drewrite.additionalPlainTextMasks=**/*.bpmn,**/*.dmn,**/*.cmmn,... (see scripts/migrate.sh),
+#                otherwise BPMN/DMN/CMMN/JS files are parsed as "Quark" and text recipes skip them.
+#   A Camunda EE project needs the Camunda EE repository (credentials) while the recipe runs: the
+#   rewrite-maven-plugin resolves all (test) dependencies before any recipe starts.
+#
+# ORDERING RULES (a recipe list runs top to bottom; every recipe sees the output of the previous one)
+#   1. Recipes that must still see org.camunda.* types go BEFORE the official recipe (Boot4PreFixes,
+#      PreFixes).
+#   2. Recipes that match org.operaton.* types / operaton.bpm keys go AFTER it (PostFixes, AlignVersions,
+#      AlignVersionsOperaton2).
+#   3. Text recipes (org.openrewrite.text.FindAndReplace) turn a changed file into plain text for the
+#      rest of the run. No LST recipe (Java/YAML/XML/Maven) may run on a file after a text recipe
+#      changed it. Text recipes therefore sit at the END of PostFixes and in ScriptImports; the only
+#      recipes after them (AlignVersions, AlignVersionsOperaton2) touch build files that no text recipe
+#      touches.
+#   4. FindAndReplace is case-INsensitive by default -> always caseSensitive: true.
+#   5. FindAndReplace skips "Quark" files (unknown extensions) -> pass plainTextMasks for models/scripts.
+#   6. filePattern is a ';'-separated list of globs; '**/x' also matches x in the root; character
+#      classes such as [dD]ockerfile do NOT work -> list both spellings.
+#   7. Never touch org.camunda.feel (Operaton still uses the Camunda FEEL engine) and never the
+#      model namespace URIs http://camunda.org/schema/1.0/... (decision D3: keep camunda: namespace).
+#
+# Versions are pinned for reproducibility (as of 2026-10-11): Operaton 1.1.5 is built with Spring
+# Boot 3.5.16, Operaton 2.1.5 with Spring Boot 4.0.8, Operaton 2.2.0-RC1 with Spring Boot 4.1.1
+# (version.spring-boot in org.operaton.bpm:operaton-root:<version>). scripts/migrate.sh --target <version>
+# rewrites the lines marked "# starterpack:hop2-operaton" / "# starterpack:hop2-spring-boot" (Hop 2) and
+# "# starterpack:boot4-operaton" / "# starterpack:boot4-spring-boot" (Spring Boot 4 path) in a temporary
+# copy, and drops the line marked "# starterpack:boot4-spring-boot-patch" when the Spring Boot minor of
+# the project differs from the one the target is built with.
+# =====================================================================================================
+
+# =====================================================================================================
+# Spring Boot 4 path (main): Camunda 7.24 EE on Spring Boot 4 -> Operaton 2.x in one step
+# =====================================================================================================
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.MigrateSpringBoot4App
+displayName: 'Camunda 7.24 EE on Spring Boot 4 (-4 starters, 7.24.N-ee) -> Operaton 2.x in one step'
+description: >-
+  The Hop 1 chain (PreFixes, official recipe, PostFixes, ScriptImports) wrapped for a project that already
+  runs on Spring Boot 4: Boot4PreFixes maps what the official recipe 1.0.1 does not know (camunda-bom
+  first, the -4 starters, -4-webapp-ee, the -jackson3 artifacts, -webapp-core) straight to Operaton 2.x
+  coordinates, AlignVersionsOperaton2 replaces the 1.0.x versions of the official recipe with the target.
+  Spring Boot is never downgraded; at most it gets a patch upgrade within its minor line. None of the Spring
+  Boot 4 / Jackson 3 upgrade recipes of Hop 2 run: the project is on Spring Boot 4 already. Run on a clean
+  Git working tree, dry run first, review the diff.
+recipeList:
+  - starterpack.operaton.Boot4PreFixes
+  - starterpack.operaton.PreFixes
+  - org.operaton.rewrite.spring.MigrateSpringBootApplication
+  - starterpack.operaton.PostFixes
+  - starterpack.operaton.ScriptImports
+  - starterpack.operaton.AlignVersionsOperaton2
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.Boot4PreFixes
+displayName: 'Spring Boot 4 pre-fixes: operaton-bom first, then -4 / -webapp-ee / -jackson3 artifacts straight to Operaton 2.x'
+description: >-
+  migrate-camunda-recipe 1.0.1 maps none of the Spring Boot 4 starters of Camunda 7.24 EE (-4 infix), none of
+  the opt-in Jackson 3 artifacts of 7.24.16 and not -webapp-core: on a Spring Boot 4 project it renames the
+  Java imports but leaves these coordinates behind (unbuildable pom). Operaton 2.x has no -4 infix (one set of
+  starters per line) and no Jackson 3 Spin/REST/client artifacts. Versions are left to operaton-bom.
+recipeList:
+  # BOM FIRST: once operaton-bom (target version) is imported, every Operaton artifact below is managed and the
+  # model stays resolvable. Otherwise later Maven recipes see an unresolvable model and write explicit versions.
+  # With <version>${camunda.version}</version> the property value becomes the target (renamed in
+  # AlignVersionsOperaton2). EE versions (7.24.N-ee) do not block the match (no oldVersion filter).
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm
+      oldArtifactId: camunda-bom
+      newGroupId: org.operaton.bpm
+      newArtifactId: operaton-bom
+      newVersion: 2.1.5  # starterpack:boot4-operaton
+      changeManagedDependency: true
+  # Builds without camunda-bom that put ${camunda.version} on every artifact: the EE version 7.24.N-ee is
+  # "newer" than any Operaton 2.x version, so no upgrade recipe would ever replace it.
+  - org.openrewrite.maven.ChangePropertyValue:
+      key: camunda.version
+      newValue: 2.1.5  # starterpack:boot4-operaton
+      addIfMissing: false
+  - org.openrewrite.maven.ChangePropertyValue:
+      key: version.camunda
+      newValue: 2.1.5  # starterpack:boot4-operaton
+      addIfMissing: false
+  # Spring Boot 4 starters of Camunda 7.24.3-ee+ (groupId org.camunda.bpm.springboot, "-4" after "starter").
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-rest
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-rest
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-webapp
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-webapp
+  # EE webapps: Operaton has only the CE feature set (decision D17).
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-webapp-ee
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-webapp
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-webapp-core
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-webapp-core
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-security
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-security
+  # Mapped to the JUnit 4 flavour like the official recipe does for -test; PostFixes then adds
+  # operaton-bpm-spring-boot-starter-test-junit5 and removes this one unless JUnit 4 tests exist (decision D11).
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-test
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-test
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-external-task-client
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-external-task-client
+  # Opt-in Jackson 3 artifacts of 7.24.16-ee. Operaton 2.x Spin, REST API and external task client are Jackson 2
+  # only (operaton#1672), so these go back to the Jackson 2 artifacts. Code written against tools.jackson.* for
+  # Spin/REST (DataFormatConfigurator, ObjectMapper customizers) must be rewritten to com.fasterxml.jackson.* by
+  # hand (scripts/assess.sh reports it; it does not compile against the Jackson 2 artifacts).
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-4-rest-jackson3
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-rest
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.spin
+      oldArtifactId: camunda-spin-dataformat-json-jackson3
+      newGroupId: org.operaton.spin
+      newArtifactId: operaton-spin-dataformat-json-jackson
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.spin
+      oldArtifactId: camunda-spin-dataformat-all-jackson3
+      newGroupId: org.operaton.spin
+      newArtifactId: operaton-spin-dataformat-all
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm
+      oldArtifactId: camunda-engine-rest-core-jakarta-jackson3
+      newGroupId: org.operaton.bpm
+      newArtifactId: operaton-engine-rest-core
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm
+      oldArtifactId: camunda-engine-rest-jakarta-jackson3
+      newGroupId: org.operaton.bpm
+      newArtifactId: operaton-engine-rest
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm
+      oldArtifactId: camunda-external-task-client-jackson3
+      newGroupId: org.operaton.bpm
+      newArtifactId: operaton-external-task-client
+  # Classic (Spring Boot 3 named) starter that the official recipe does not map either.
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.springboot
+      oldArtifactId: camunda-bpm-spring-boot-starter-webapp-core
+      newGroupId: org.operaton.bpm.springboot
+      newArtifactId: operaton-bpm-spring-boot-starter-webapp-core
+  # EE license file: Operaton has no license mechanism (the license rows in the database are inert; keep them
+  # for rollback). The official recipe deletes the key as well; listed here so that the EE path does not depend
+  # on it.
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: camunda.bpm.license-file
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.AlignVersionsOperaton2
+displayName: 'Spring Boot 4 path versions: Operaton 2.x target, operaton.version property, no Spring Boot downgrade'
+description: >-
+  migrate-camunda-recipe 1.0.1 pins 1.0.x (a Spring Boot 3.5 line) on the artifacts it maps. Removes duplicate
+  dependencies (Maven 3.10 rejects them), moves every org.operaton* artifact to the 2.x target, drops explicit
+  versions that operaton-bom manages anyway, renames the misleading camunda.version property and aligns
+  Spring Boot within its minor line. Only touches build files.
+recipeList:
+  # Two Camunda artifacts can map to one Operaton artifact (-4-rest and -4-rest-jackson3 -> starter-rest,
+  # json-jackson and json-jackson3 -> operaton-spin-dataformat-json-jackson). Drop the duplicate first: on a
+  # duplicated dependency the version recipes below see only one of the two (a 1.0.x version would stay), and
+  # Maven 3.10 refuses the pom ("must be unique"; Maven 3.9 only warns).
+  - org.openrewrite.maven.RemoveDuplicateDependencies
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.operaton*
+      artifactId: '*'
+      newVersion: 2.1.5  # starterpack:boot4-operaton
+  - org.openrewrite.maven.RemoveRedundantDependencyVersions:
+      groupPattern: org.operaton*
+      onlyIfManagedVersionIs: EQ
+  - org.openrewrite.maven.RenamePropertyKey:
+      oldKey: camunda.version
+      newKey: operaton.version
+  - org.openrewrite.maven.RenamePropertyKey:
+      oldKey: version.camunda
+      newKey: version.operaton
+  # scripts/migrate.sh drops this line when the Spring Boot minor of the project differs from the target's.
+  - starterpack.operaton.internal.SpringBootPatchForOperaton2  # starterpack:boot4-spring-boot-patch
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.internal.SpringBootPatchForOperaton2
+displayName: 'Internal: Spring Boot patch upgrade to the version the Operaton 2.x target is built with'
+description: >-
+  Operaton supports only the Spring Boot version each release is built with (2.1.5 = 4.0.8, 2.2.x = 4.1.x).
+  Upgrade recipes never downgrade: a project on 4.1.x keeps 4.1.x with the 4.0.8 default below. A minor
+  upgrade (4.0 -> 4.1) is a separate change; scripts/migrate.sh only keeps this recipe when the project is on
+  the target's minor line and warns otherwise.
+recipeList:
+  - org.openrewrite.maven.UpgradeParentVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-starter-parent
+      newVersion: 4.0.8  # starterpack:boot4-spring-boot
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-dependencies
+      newVersion: 4.0.8  # starterpack:boot4-spring-boot
+      overrideManagedVersion: true
+  - org.openrewrite.maven.UpgradePluginVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-maven-plugin
+      newVersion: 4.0.8  # starterpack:boot4-spring-boot
+  - org.openrewrite.gradle.plugins.UpgradePluginVersion:
+      pluginIdPattern: org.springframework.boot
+      newVersion: 4.0.8  # starterpack:boot4-spring-boot
+
+# =====================================================================================================
+# Spring Boot 3.5 path, Hop 1: Camunda 7.24 (Spring Boot 3.5) -> Operaton 1.1.x
+# (PreFixes, PostFixes and ScriptImports are shared with the Spring Boot 4 path)
+# =====================================================================================================
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.MigrateSpringBootApp
+displayName: 'Hop 1: Camunda 7.24 (Spring Boot, embedded engine) -> Operaton 1.1.x'
+description: >-
+  Official Operaton recipe (org.operaton.rewrite.spring.MigrateSpringBootApplication) wrapped by the
+  starter-pack gap fixes. Run on a clean Git working tree, dry run first, review the diff.
+recipeList:
+  - starterpack.operaton.PreFixes
+  - org.operaton.rewrite.spring.MigrateSpringBootApplication
+  - starterpack.operaton.PostFixes
+  - starterpack.operaton.ScriptImports
+  - starterpack.operaton.AlignVersions
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.PreFixes
+displayName: 'Pre-fixes (Spring Boot 4 path and Hop 1): changes that must still see org.camunda types (run BEFORE the official recipe)'
+description: >-
+  Wires the deprecation recipe the official composite forgets, maps the shaded EL API to jakarta.el (the
+  official ChangePackage would produce a package that does not exist), fixes the Mocks relocation (the official
+  ChangeType entries match org.operaton...test.mock, which only exists after ChangePackage ran), and
+  renames string literals the official recipe does not touch (bean names, camunda.cfg.xml, camunda.bpm
+  property prefixes in @ConditionalOnProperty/@ConfigurationProperties).
+recipeList:
+  # Official recipe exists but is not part of MigrateFromCamunda; its pattern uses org.camunda types.
+  - org.operaton.rewrite.deprecation.ReplaceGetExecutionContext
+  # Camunda 7.24 ships a shaded copy of the EL API in camunda-juel (org.camunda.bpm.impl.juel.jakarta.el).
+  # Operaton uses the real jakarta.el API (jakarta.el-api, compile dependency of operaton-juel). The official
+  # ChangePackage org.camunda.bpm -> org.operaton.bpm would produce org.operaton.bpm.impl.juel.jakarta.el,
+  # which does not exist (custom ELResolvers, ProcessApplicationElResolver, ExpressionManager code).
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.camunda.bpm.impl.juel.jakarta.el
+      newPackageName: jakarta.el
+      recursive: true
+  # Mocks moved to the main jar (org.operaton.bpm.engine.impl.mock).
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.camunda.bpm.engine.test.mock.Mocks
+      newFullyQualifiedTypeName: org.operaton.bpm.engine.impl.mock.Mocks
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.camunda.bpm.engine.test.mock.MockExpressionManager
+      newFullyQualifiedTypeName: org.operaton.bpm.engine.impl.mock.MockExpressionManager
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.camunda.bpm.engine.test.mock.MockElResolver
+      newFullyQualifiedTypeName: org.operaton.bpm.engine.impl.mock.MockElResolver
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: org.camunda.bpm.engine.test.mock.MocksResolverFactory
+      newFullyQualifiedTypeName: org.operaton.bpm.engine.impl.mock.MocksResolverFactory
+  # Well-known bean names of the Spring Boot starter (string based, e.g. @Qualifier("camundaBpmDataSource")).
+  # A forgotten "camundaBpmDataSource" bean is silently ignored -> engine falls back to the @Primary DataSource.
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: camundaBpmDataSource
+      newLiteralValue: operatonBpmDataSource
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: camundaBpmTransactionManager
+      newLiteralValue: operatonBpmTransactionManager
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: camundaBpmJdbcTemplate
+      newLiteralValue: operatonBpmJdbcTemplate
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: camundaTaskExecutor
+      newLiteralValue: operatonTaskExecutor
+  # Test engine configuration file name (ProcessEngineExtension/Rule only read operaton.cfg.xml).
+  - org.openrewrite.java.ReplaceStringLiteralValue:
+      oldLiteralValue: camunda.cfg.xml
+      newLiteralValue: operaton.cfg.xml
+  # "camunda.bpm" / "camunda.bpm.ldap" ... as property prefix in string literals (@ConditionalOnProperty(prefix=...),
+  # @ConfigurationProperties(...)). ChangeSpringPropertyKey only rewrites the name attribute of @ConditionalOnProperty.
+  # The look-behind keeps "org.camunda.bpm..." literals untouched: class names in strings are a review item
+  # (verify-leftovers.sh flags them) because they are often data contracts of downstream consumers.
+  - org.openrewrite.java.ChangePackageInStringLiteral:
+      oldPackageName: '(?<![\w.])camunda\.bpm'
+      newPackageName: operaton.bpm
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.PostFixes
+displayName: 'Post-fixes (Spring Boot 4 path and Hop 1): gaps of the official recipe (run AFTER it)'
+description: >-
+  LST-based fixes first (Spring properties, logger names, files, dependencies), text-based fixes last
+  (whitelist regex values, generic property names, descriptor schema locations, SPI file contents).
+recipeList:
+  # ---------- LST based (YAML / properties / XML / Java / Maven) ----------
+  # Actuator health toggle lives outside camunda.bpm.*
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: management.health.camunda
+      newPropertyKey: management.health.operaton
+  # logging.level keys: YAML keys are already renamed by the official ChangePackage, .properties keys are not.
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: logging.level.org.camunda.bpm
+      newPropertyKey: logging.level.org.operaton.bpm
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: logging.level.org.camunda.spin
+      newPropertyKey: logging.level.org.operaton.spin
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: logging.level.org.camunda.commons
+      newPropertyKey: logging.level.org.operaton.commons
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: logging.level.org.camunda.connect
+      newPropertyKey: logging.level.org.operaton.connect
+  # logback (<logger name=...>) and log4j2 (<Logger name=...>) logger names. regex: oldValue must match the WHOLE value.
+  - org.openrewrite.xml.ChangeTagAttribute:
+      elementName: //logger
+      attributeName: name
+      oldValue: 'org\.camunda\.(bpm|spin|commons|connect)(.*)'
+      newValue: 'org.operaton.$1$2'
+      regex: true
+  - org.openrewrite.xml.ChangeTagAttribute:
+      elementName: //Logger
+      attributeName: name
+      oldValue: 'org\.camunda\.(bpm|spin|commons|connect)(.*)'
+      newValue: 'org.operaton.$1$2'
+      regex: true
+  - org.openrewrite.xml.ChangeTagAttribute:
+      elementName: //AsyncLogger
+      attributeName: name
+      oldValue: 'org\.camunda\.(bpm|spin|commons|connect)(.*)'
+      newValue: 'org.operaton.$1$2'
+      regex: true
+  # FreeMarker template engine package (not covered by the official ChangePackage).
+  - org.openrewrite.java.ChangePackage:
+      oldPackageName: org.camunda.templateengines
+      newPackageName: org.operaton.templateengines
+      recursive: true
+  # Test engine configuration: camunda.cfg.xml is never read by Operaton (content was already rewritten).
+  - org.openrewrite.RenameFile:
+      fileMatcher: '**/camunda.cfg.xml'
+      fileName: operaton.cfg.xml
+  # JUnit 5 test support. The official recipe's AddDependency uses onlyIfUsing: org.junit.jupiter.Test
+  # (a type that does not exist), so it never fires. The starter brings operaton-bpm-assert and the
+  # operaton-engine junit5/junit6 classifier jar with ProcessEngineExtension (decision D11).
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.operaton.bpm.springboot
+      artifactId: operaton-bpm-spring-boot-starter-test-junit5
+      version: 1.1.x
+      scope: test
+      onlyIfUsing: org.junit.jupiter.api.*
+  # The JUnit 4 flavour is only useful for JUnit 4 tests.
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.operaton.bpm.springboot
+      artifactId: operaton-bpm-spring-boot-starter-test
+      unlessUsing: org.junit.Test
+  # camunda-bpm-junit5 is mapped to operaton-bpm-junit5, which is an EMPTY jar on Operaton 1.x
+  # (ProcessEngineExtension lives in operaton-engine:junit5 / the starter above).
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.operaton.bpm
+      artifactId: operaton-bpm-junit5
+  # Artifacts that exist in Operaton but are not mapped by migrate-camunda-recipe 1.0.1.
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm
+      oldArtifactId: camunda-engine-rest-openapi
+      newGroupId: org.operaton.bpm
+      newArtifactId: operaton-engine-rest-openapi
+      newVersion: 1.1.x
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.camunda.bpm.distro
+      oldArtifactId: camunda-sql-scripts
+      newGroupId: org.operaton.bpm.distro
+      newArtifactId: operaton-sql-scripts
+      newVersion: 7.24.0
+  # ---------- text based (keep LAST) ----------
+  # Default identity whitelist changed from "[a-zA-Z0-9]+|camunda-admin" to "[a-zA-Z0-9]+|operaton-admin".
+  # A custom pattern that still contains camunda-admin makes the starter fail at startup:
+  # "Group has an invalid id: 'operaton-admin' is not a valid resource identifier."
+  # Only the value of *WhitelistPattern / *-whitelist-pattern keys is touched.
+  - org.openrewrite.text.FindAndReplace:
+      find: '((?i:whitelist-?pattern)["'']?\s*[:=][^\r\n]*?)camunda-admin'
+      replace: '$1operaton-admin'
+      regex: true
+      caseSensitive: true
+      filePattern: '**/application*.yml;**/application*.yaml;**/application*.properties;**/bootstrap*.yml;**/bootstrap*.yaml;**/bootstrap*.properties'
+  # Generic engine property whose setter was renamed (setDisableStrictOperatonFormParsing). Spring Boot
+  # fails at startup on the unknown generic property (unless ignore-unknown-fields is set).
+  - org.openrewrite.text.FindAndReplace:
+      find: 'disable-?[sS]trict-?[cC]amunda-?[fF]orm-?[pP]arsing'
+      replace: disableStrictOperatonFormParsing
+      regex: true
+      caseSensitive: true
+      filePattern: '**/application*.yml;**/application*.yaml;**/application*.properties;**/bootstrap*.yml;**/bootstrap*.yaml;**/bootstrap*.properties;**/*.cfg.xml'
+  # processes.xml / bpm-platform.xml: ChangeNamespaceValue changes xmlns but leaves xsi:schemaLocation.
+  - org.openrewrite.text.FindAndReplace:
+      find: 'http://www\.camunda\.org/schema/1\.0/(ProcessApplication|BpmPlatform)'
+      replace: 'http://www.operaton.org/schema/1.0/$1'
+      regex: true
+      caseSensitive: true
+      filePattern: '**/processes.xml;**/bpm-platform.xml'
+  # SPI registrations: file CONTENTS of META-INF/services (only renamed by rewrite >= 8.79 / plugin >= 6.36)
+  # and keys/values of META-INF/spring.factories and META-INF/spring/*.imports (never renamed).
+  # Example: a Spin DataFormatConfigurator registered in spring.factories silently stops loading.
+  - org.openrewrite.text.FindAndReplace:
+      find: '\borg\.camunda\.(bpm|spin|connect|commons|templateengines)\.'
+      replace: 'org.operaton.$1.'
+      regex: true
+      caseSensitive: true
+      filePattern: '**/META-INF/services/*;**/META-INF/spring.factories;**/META-INF/spring/*.imports'
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.ScriptImports
+displayName: 'Rewrite org.camunda.(bpm|spin|connect|commons|templateengines) references in models and script files'
+description: >-
+  Inline scripts (Groovy, JavaScript, Python, Ruby), script resources, camunda:class attributes of
+  own classes in relocated packages and FreeMarker templates reference Java packages as TEXT. They
+  deploy fine and fail at runtime (ScriptCompilationException / TypeError) when a token reaches them.
+  Leaves the camunda: namespace (http://camunda.org/schema/...) and org.camunda.feel alone.
+  Changing a model creates a new process/decision definition version on the next deployment; already
+  deployed versions keep the old script (plan process instance migration). The new versions reference
+  org.operaton.* and fail on Camunda 7.24 (rollback hard stop, decision D15); package-free scripts
+  deployed on Camunda 7.24 before the cut-over avoid that (docs/05, "Fix it in the repository").
+  Requires plainTextMasks for these extensions (scripts/migrate.sh passes them).
+recipeList:
+  - org.openrewrite.text.FindAndReplace:
+      find: '\borg\.camunda\.(bpm|spin|connect|commons|templateengines)\.'
+      replace: 'org.operaton.$1.'
+      regex: true
+      caseSensitive: true
+      filePattern: '**/*.bpmn;**/*.bpmn20.xml;**/*.dmn;**/*.dmn11.xml;**/*.cmmn;**/*.cmmn10.xml;**/*.cmmn11.xml;**/*.groovy;**/*.gvy;**/*.js;**/*.mjs;**/*.py;**/*.rb;**/*.ftl'
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.AlignVersions
+displayName: 'Hop 1 versions: Operaton 1.1.x, Spring Boot 3.5.16, operaton.version property'
+description: >-
+  migrate-camunda-recipe 1.0.1 pins 1.0.x (-> 1.0.3, an ended line). Moves every org.operaton* artifact to
+  the 1.1.x maintenance line, aligns Spring Boot with the version Operaton 1.1.5 is built with, and
+  renames the misleading camunda.version property. Only touches build files.
+recipeList:
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.operaton*
+      artifactId: '*'
+      newVersion: 1.1.x
+  - org.openrewrite.maven.UpgradeParentVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-starter-parent
+      newVersion: 3.5.16
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-dependencies
+      newVersion: 3.5.16
+      overrideManagedVersion: true
+  - org.openrewrite.gradle.plugins.UpgradePluginVersion:
+      pluginIdPattern: org.springframework.boot
+      newVersion: 3.5.16
+  - org.openrewrite.maven.RenamePropertyKey:
+      oldKey: camunda.version
+      newKey: operaton.version
+  - org.openrewrite.maven.RenamePropertyKey:
+      oldKey: version.camunda
+      newKey: version.operaton
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.InfraEnvVars
+displayName: 'Optional: CAMUNDA_BPM_* -> OPERATON_BPM_* in container, compose and Kubernetes/Helm files'
+description: >-
+  Spring Boot relaxed binding maps CAMUNDA_BPM_* to camunda.bpm.*, which Operaton ignores silently.
+  Covers Dockerfiles, .env files, compose files and YAML in typical infra folders. CI pipeline variables,
+  secrets and config servers outside the repository are NOT covered (scripts/verify-leftovers.sh lists them).
+recipeList:
+  - org.openrewrite.text.FindAndReplace:
+      find: CAMUNDA_BPM_
+      replace: OPERATON_BPM_
+      caseSensitive: true
+      filePattern: '**/Dockerfile*;**/dockerfile*;**/*.dockerfile;**/Containerfile*;**/*.env;**/.env;**/.env.*;**/docker-compose*.yml;**/docker-compose*.yaml;**/compose*.yml;**/compose*.yaml;**/k8s/**/*.yml;**/k8s/**/*.yaml;**/kubernetes/**/*.yml;**/kubernetes/**/*.yaml;**/helm/**/*.yml;**/helm/**/*.yaml;**/charts/**/*.yml;**/charts/**/*.yaml;**/deploy/**/*.yml;**/deploy/**/*.yaml;**/ops/**/*.yml;**/ops/**/*.yaml'
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.FormKeys
+displayName: 'Optional (decision D4): camunda-forms: -> operaton-forms: form keys in BPMN models'
+description: >-
+  The engine resolves both prefixes, but the Operaton Tasklist only recognises operaton-forms: (according
+  to the source). Changed models are deployed as new versions; running instances keep the old key until
+  migrated. Operaton-only: Camunda 7.24 cannot load an operaton-forms: form (according to the source), so
+  definition versions with these keys that have open tasks are a rollback HARD stop (decision D15). The
+  rollback-safe alternative camunda:formRef (D4 option C) is a manual model edit that can be deployed and
+  migrated to on Camunda 7.24 before the cut-over. Test expectations in Java code are not changed.
+recipeList:
+  - org.openrewrite.text.FindAndReplace:
+      find: 'camunda-forms:'
+      replace: 'operaton-forms:'
+      caseSensitive: true
+      filePattern: '**/*.bpmn;**/*.bpmn20.xml'
+
+# =====================================================================================================
+# Spring Boot 3.5 path, Hop 2: Operaton 1.1.x -> 2.1.x + Spring Boot 4.0
+# =====================================================================================================
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.UpgradeToOperaton2
+displayName: 'Hop 2: Operaton 1.1.x -> 2.1.x (Spring Boot 4.0, Spring Framework 7, Jakarta EE 11)'
+description: >-
+  Spring Boot 4.0 upgrade from rewrite-spring 6.37.0, re-composed so that the Jackson 2 -> 3 migration
+  does NOT touch code that uses Operaton/Spin types (Operaton 2.x Spin, engine and REST still use
+  Jackson 2), then every org.operaton* artifact to 2.1.x and the parent to the exact Spring Boot version
+  the Operaton release is built with.
+recipeList:
+  - starterpack.operaton.internal.UpgradeSpringBoot_4_0_KeepJackson2ForOperaton
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.operaton*
+      artifactId: '*'
+      newVersion: 2.1.x  # starterpack:hop2-operaton
+  - org.openrewrite.maven.ChangeParentPom:
+      oldGroupId: org.springframework.boot
+      oldArtifactId: spring-boot-starter-parent
+      newVersion: 4.0.8  # starterpack:hop2-spring-boot
+      allowVersionDowngrades: true
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.internal.UpgradeSpringBoot_4_0_KeepJackson2ForOperaton
+displayName: 'Internal: org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0 (rewrite-spring 6.37.0) without the blanket Jackson 3 migration'
+description: >-
+  Same recipe list as UpgradeSpringBoot_4_0 in rewrite-spring 6.37.0 (41 entries, compared with
+  META-INF/rewrite/spring-boot-40.yml of the published jar), except that UpgradeSpringFramework_7_0 is
+  replaced by a copy whose Jackson 2 -> 3 step is limited to Java/Kotlin sources that do not use
+  org.operaton types. The upstream org.openrewrite.Singleton precondition is omitted (this recipe is
+  included only once). Keep in sync when you change the rewrite-spring version.
+recipeList:
+  - org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_5
+  - org.openrewrite.java.spring.cloud2025.UpgradeSpringCloud_2025_1
+  - starterpack.operaton.internal.UpgradeSpringFramework_7_0_KeepJackson2ForOperaton
+  - org.openrewrite.java.spring.security7.UpgradeSpringSecurity_7_0
+  - org.openrewrite.java.spring.batch.SpringBatch5To6Migration
+  - org.openrewrite.java.spring.boot4.SpringBootProperties_4_0
+  - org.openrewrite.java.spring.boot4.ReplaceMockBeanAndSpyBean
+  - org.openrewrite.java.spring.boot4.RelocateWebServerClasses
+  - org.openrewrite.hibernate.MigrateToHibernate71
+  - org.openrewrite.java.testing.testcontainers.Testcontainers2Migration
+  - org.openrewrite.java.springdoc.UpgradeSpringDoc_3_0
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.springframework.boot
+      artifactId: '*'
+      newVersion: 4.0.x
+      overrideManagedVersion: false
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-dependencies
+      newVersion: 4.0.x
+      overrideManagedVersion: true
+  - org.openrewrite.maven.UpgradePluginVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-maven-plugin
+      newVersion: 4.0.x
+  - org.openrewrite.java.spring.boot4.MigrateJacksonBomProperty
+  - org.openrewrite.maven.UpgradeParentVersion:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-starter-parent
+      newVersion: 4.0.x
+  - org.openrewrite.maven.RemoveRedundantDependencyVersions:
+      groupPattern: tools.jackson*
+      onlyIfManagedVersionIs: ANY
+  - org.openrewrite.maven.RemoveRedundantDependencyVersions:
+      onlyIfManagedVersionIs: GTE
+  - org.openrewrite.gradle.plugins.UpgradePluginVersion:
+      pluginIdPattern: org.springframework.boot
+      newVersion: 4.0.x
+  - org.openrewrite.gradle.UpdateGradleWrapper:
+      version: ^8.14
+      addIfMissing: false
+  - org.openrewrite.gradle.plugins.UpgradePluginVersion:
+      pluginIdPattern: org.jetbrains.kotlin.*
+      newVersion: 2.2.x
+  - org.openrewrite.maven.UpgradePluginVersion:
+      groupId: org.jetbrains.kotlin
+      artifactId: kotlin-maven-plugin
+      newVersion: 2.2.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.jetbrains.kotlin
+      artifactId: '*'
+      newVersion: 2.2.x
+      overrideManagedVersion: true
+  - org.openrewrite.java.spring.boot4.MigrateToModularStarters
+  - org.openrewrite.java.spring.boot4.RenameDeprecatedStartersManagedVersions
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.springframework.boot
+      oldArtifactId: spring-boot-starter-oauth2-authorization-server
+      newArtifactId: spring-boot-starter-security-oauth2-authorization-server
+      newVersion: 4.0.x
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.springframework.boot
+      oldArtifactId: spring-boot-starter-oauth2-client
+      newArtifactId: spring-boot-starter-security-oauth2-client
+      newVersion: 4.0.x
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.springframework.boot
+      oldArtifactId: spring-boot-starter-oauth2-resource-server
+      newArtifactId: spring-boot-starter-security-oauth2-resource-server
+      newVersion: 4.0.x
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.springframework.boot
+      oldArtifactId: spring-boot-starter-web
+      newArtifactId: spring-boot-starter-webmvc
+      newVersion: 4.0.x
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.springframework.boot
+      oldArtifactId: spring-boot-starter-web-services
+      newArtifactId: spring-boot-starter-webservices
+      newVersion: 4.0.x
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: org.springframework.boot
+      artifactId: spring-boot-starter-aop
+      unlessUsing: org.aspectj.lang.annotation.*
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.springframework.boot
+      oldArtifactId: spring-boot-starter-aop
+      newArtifactId: spring-boot-starter-aspectj
+      newVersion: 4.0.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: eu.michael-simons.neo4j
+      artifactId: neo4j-migrations-spring-boot-starter
+      newVersion: 3.0.x
+      overrideManagedVersion: true
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: io.github.wimdeblauwe
+      artifactId: error-handling-spring-boot-starter
+      newVersion: 5.0.x
+      overrideManagedVersion: true
+  - org.openrewrite.java.dependencies.ChangeDependency:
+      oldGroupId: org.jobrunr
+      oldArtifactId: jobrunr-spring-boot-3-starter
+      newArtifactId: jobrunr-spring-boot-4-starter
+      newVersion: 8.x
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.jobrunr
+      artifactId: '*'
+      newVersion: 8.x
+      overrideManagedVersion: true
+  - org.openrewrite.java.spring.boot4.AddAutoConfigureTestRestTemplate
+  - org.openrewrite.java.spring.boot4.AddAutoConfigureWebTestClient
+  - org.openrewrite.java.spring.boot4.AddAutoConfigureMockMvc
+  - org.openrewrite.java.spring.boot4.MigrateOpenApiGeneratorToSpringBoot4
+  - org.openrewrite.java.spring.boot4.MigrateJsonschema2PojoToSpringBoot4
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.internal.UpgradeSpringFramework_7_0_KeepJackson2ForOperaton
+displayName: 'Internal: UpgradeSpringFramework_7_0 (rewrite-spring 6.37.0) with a scoped Jackson 3 migration'
+recipeList:
+  - org.openrewrite.java.spring.framework.UpgradeSpringFramework_6_2
+  - org.openrewrite.java.dependencies.UpgradeDependencyVersion:
+      groupId: org.springframework
+      artifactId: '*'
+      newVersion: 7.0.x
+  - org.openrewrite.java.testing.junit6.JUnit5to6Migration
+  - starterpack.operaton.internal.Jackson3OutsideOperatonCode
+  - org.openrewrite.java.spring.kafka.UpgradeSpringKafka_4_0
+  - org.openrewrite.java.jspecify.MigrateFromSpringFrameworkAnnotations
+
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: starterpack.operaton.internal.Jackson3OutsideOperatonCode
+displayName: 'Internal: Jackson 2 -> 3 only for Java/Kotlin sources that do not use org.operaton types'
+description: >-
+  Operaton 2.x Spin (DataFormatConfigurator, JacksonJsonDataFormat#getObjectMapper), the REST API and the
+  external task client still use Jackson 2 (com.fasterxml.jackson). Build files are excluded as well, so
+  Jackson 2 modules such as jackson-datatype-jsr310 stay available for Spin.
+preconditions:
+  - org.openrewrite.FindSourceFiles:
+      filePattern: '**/*.java;**/*.kt'
+  - org.openrewrite.java.search.DoesNotUseType:
+      fullyQualifiedTypeName: org.operaton..*
+recipeList:
+  - org.openrewrite.java.jackson.UpgradeJackson_2_3

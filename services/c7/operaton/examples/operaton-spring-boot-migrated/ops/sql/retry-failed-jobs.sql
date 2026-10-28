@@ -1,0 +1,15 @@
+-- =============================================================================================
+-- REPLACED (decision D10) - this file intentionally contains no executable SQL any more.
+--
+-- The Camunda-era version did:  UPDATE ACT_RU_JOB SET RETRIES_ = 3, ... WHERE RETRIES_ = 0 ...
+-- That bypassed optimistic locking (REV_), left incidents open, wrote no user operation log and
+-- skipped the custom IncidentHandler. The schema is identical in Operaton, so it would still "work".
+--
+-- Use instead (engine running):
+--   Java   com.example.orders.operations.IncidentRecoveryService#retryJob / #retryFailedJobsAsync
+--   REST   PUT  /engine-rest/job/{id}/retries      {"retries": 3, "dueDate": "..."}
+--          POST /engine-rest/job/retries           {"jobQuery": {"noRetriesLeft": true}, "retries": 3}
+--   UI     Cockpit -> incident -> Retry, or a batch operation
+-- Engine NOT available (emergency only, engine stopped):
+--   starter pack sql/postgresql/30-emergency-job-retries.sql
+-- =============================================================================================

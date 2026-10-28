@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MIGRATED: logger names are Java package names; the engine logs under org.operaton.bpm.*.
+  starterpack.operaton.PostFixes renamed the <logger> entries below. Log-shipping filters, alert
+  rules and dashboards keyed on "org.camunda" live outside this repo and must follow (message codes
+  such as ENGINE-16004 are unchanged). FEEL keeps logging under org.camunda.feel.
+-->
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <property name="CONSOLE_LOG_PATTERN"
+            value="%d{HH:mm:ss.SSS} %-5level [%thread] [pi=%X{processInstanceId} act=%X{activityId}] %logger{36} - %msg%n"/>
+  <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+  <!-- Job executor acquisition/execution -->
+  <logger name="org.operaton.bpm.engine.jobexecutor" level="INFO"/>
+  <!-- "ENGINE-16004 Exception while closing command context" (+ stack trace) is logged at ERROR
+       by the context logger for every failing job attempt. Teams often silence it and rely on
+       incidents/their IncidentHandler instead. Before the logger rename, this line no longer matched
+       and the noise (and alerts on ERROR logs) came back: 0 -> 3 ERROR lines per failing job. -->
+  <logger name="org.operaton.bpm.engine.context" level="OFF"/>
+  <!-- Script engine / Spin -->
+  <logger name="org.operaton.bpm.engine.script" level="INFO"/>
+  <logger name="org.operaton.spin" level="INFO"/>
+
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+  </root>
+</configuration>

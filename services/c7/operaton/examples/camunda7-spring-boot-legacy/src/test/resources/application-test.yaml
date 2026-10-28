@@ -1,0 +1,19 @@
+# Test overrides (profile "test").
+#
+# MIGRATION HOTSPOT: test configuration is YAML too. If "camunda.bpm.job-execution.enabled"
+# is not migrated, the job executor starts in tests and races with the manual
+# execute(job()) calls -> flaky tests instead of a clear failure.
+spring:
+  datasource:
+    url: jdbc:h2:mem:camunda-test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false
+
+camunda:
+  bpm:
+    job-execution:
+      enabled: false
+    metrics:
+      enabled: false
+
+logging:
+  level:
+    com.example.orders: INFO

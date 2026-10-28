@@ -1,0 +1,13 @@
+# Accepted Camunda leftovers of this application - read by scripts/verify-leftovers.sh.
+# Format: <RULE|*>  <path-glob>  [<extended regex the line must match>]   (reviewed 2026-10-08)
+# The helpers in src/main/java/com/example/orders/migration/ need no entry: they carry the marker
+# "// operaton-migration-helper: remove after the rollback window (D15)" and are skipped by the scan.
+
+# The helper tests feed legacy names (camunda-admin, camunda.bpm.*, CAMUNDA_BPM_*, /camunda/...) into the
+# helpers on purpose. Remove together with the helpers after the rollback window (D15).
+*            src/test/java/com/example/orders/migration/*.java
+
+# Decision D6: the webapps stay at /camunda for the cut-over release (explicit application-path).
+WEBAPP_PATH  src/main/resources/application.yaml
+WEBAPP_PATH  ops/**
+WEBAPP_PATH  src/test/java/com/example/orders/ApplicationConfigurationTest.java

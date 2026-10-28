@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MIGRATION HOTSPOT: DMN 1.3 + camunda extension namespace (camunda:historyTimeToLive).
+  Operaton still parses the camunda namespace, so the file does not have to be touched for
+  the engine; tooling (Modeler templates, linting) may still flag it.
+-->
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:camunda="http://camunda.org/schema/1.0/dmn"
+             xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+             id="Definitions_OrderDiscount"
+             name="Order Discount"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.28.0"
+             modeler:executionPlatform="Camunda Platform"
+             modeler:executionPlatformVersion="7.24.0">
+  <decision id="order-discount" name="Determine order discount" camunda:historyTimeToLive="180">
+    <decisionTable id="DecisionTable_OrderDiscount" hitPolicy="FIRST">
+      <input id="Input_CustomerType" label="Customer type" camunda:inputVariable="customerType">
+        <inputExpression id="InputExpression_CustomerType" typeRef="string">
+          <text>customerType</text>
+        </inputExpression>
+      </input>
+      <input id="Input_Amount" label="Order amount" camunda:inputVariable="amount">
+        <inputExpression id="InputExpression_Amount" typeRef="long">
+          <text>amount</text>
+        </inputExpression>
+      </input>
+      <output id="Output_Discount" label="Discount (%)" name="discount" typeRef="integer" />
+      <rule id="Rule_Vip">
+        <description>VIP customers always get 10%</description>
+        <inputEntry id="UnaryTests_Vip_Type">
+          <text>"VIP"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Vip_Amount">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Vip">
+          <text>10</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_LargeOrder">
+        <description>Large orders get 5%</description>
+        <inputEntry id="UnaryTests_Large_Type">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Large_Amount">
+          <text>&gt;= 1000</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Large">
+          <text>5</text>
+        </outputEntry>
+      </rule>
+      <rule id="Rule_Default">
+        <description>Everything else</description>
+        <inputEntry id="UnaryTests_Default_Type">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Default_Amount">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Default">
+          <text>0</text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_OrderDiscount">
+      <dmndi:DMNShape id="DMNShape_OrderDiscount" dmnElementRef="order-discount">
+        <dc:Bounds height="80" width="180" x="160" y="100" />
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

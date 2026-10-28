@@ -1,0 +1,114 @@
+# Checks the Camunda 7 -> Operaton guide (services/c7/operaton) and its agent skill (plugin/skills).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1"   # weekly: catches upstream changes (Operaton patches monthly, recipes, Maven Central)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-and-scripts:
+    name: Links, scripts, skill sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Relative links and anchors (whole repository)
+        run: python3 services/c7/operaton/tools/check-links.py .
+      - name: Shell syntax
+        run: for f in services/c7/operaton/scripts/*.sh services/c7/operaton/tools/*.sh; do bash -n "$f"; done
+      - name: ShellCheck (errors only)
+        run: shellcheck --severity=error services/c7/operaton/scripts/*.sh services/c7/operaton/tools/*.sh
+      - name: Skill assets in sync with canonical files
+        run: services/c7/operaton/tools/sync-skill.sh --check
+
+  examples:
+    name: Example ${{ matrix.example }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [camunda7-spring-boot-legacy, operaton-spring-boot-migrated]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Build and test
+        working-directory: services/c7/operaton/examples/${{ matrix.example }}
+        run: mvn -B -ntp verify
+      - name: No must-fix leftovers in the migrated example
+        if: matrix.example == 'operaton-spring-boot-migrated'
+        run: services/c7/operaton/scripts/verify-leftovers.sh --no-color services/c7/operaton/examples/operaton-spring-boot-migrated
+
+  migration-e2e:
+    name: Recipes end-to-end (legacy -> Hop 1 -> Hop 2)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Prepare a scratch copy of the legacy example
+        run: |
+          cp -R services/c7/operaton/examples/camunda7-spring-boot-legacy "$RUNNER_TEMP/demo"
+          cd "$RUNNER_TEMP/demo"
+          git init -q && git add -A
+          git -c user.name=ci -c user.email=ci@example.invalid commit -qm baseline
+      - name: Assess (must report MUST findings on the legacy app)
+        run: services/c7/operaton/scripts/assess.sh "$RUNNER_TEMP/demo" | tee "$RUNNER_TEMP/assessment.md" | grep -q "MUST"
+      - name: Hop 1 (Camunda 7.24 -> Operaton 1.1.x)
+        env:
+          MAVEN_ARGS: -B -ntp
+        run: services/c7/operaton/scripts/migrate.sh --hop 1 --with-infra-env --with-form-keys --force "$RUNNER_TEMP/demo"
+      - name: Hop 1 compiles (tests contain deliberate literal canaries, see MIGRATION_REPORT.md)
+        working-directory: ${{ runner.temp }}/demo
+        run: mvn -B -ntp -DskipTests verify
+      - name: Hop 2 (Operaton 2.x + Spring Boot 4)
+        env:
+          MAVEN_ARGS: -B -ntp
+        run: services/c7/operaton/scripts/migrate.sh --hop 2 --force "$RUNNER_TEMP/demo"
+      - name: Hop 2 compiles
+        working-directory: ${{ runner.temp }}/demo
+        run: mvn -B -ntp -DskipTests verify
+
+  migration-e2e-boot4:
+    name: Recipes end-to-end (Camunda 7.24 EE on Spring Boot 4 -> Operaton 2.x)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      # No EE access needed: the script writes a stub EE repository (POMs delegating to the CE 7.24.0 artifacts),
+      # derives a Spring Boot 4 fixture from services/c7/operaton/examples/camunda7-spring-boot-legacy, runs scripts/migrate.sh
+      # (auto-detected Spring Boot 4 path), checks the pom and builds the result with Maven Central only
+      # (-DskipTests: the tests contain deliberate literal canaries, see MIGRATION_REPORT.md).
+      - name: Spring Boot 4.0.8 -> Operaton 2.1.5
+        run: services/c7/operaton/tools/test-boot4-path.sh --spring-boot 4.0.8 --target 2.1.5
+      # Switch to --target 2.2.0 once it is GA (due 2026-10-23); 2.2.0-RC1 is a pre-release for rehearsals.
+      - name: Spring Boot 4.1.1 -> Operaton 2.2.0-RC1
+        run: services/c7/operaton/tools/test-boot4-path.sh --spring-boot 4.1.1 --target 2.2.0-RC1
+
+  sql:
+    name: SQL against the Operaton PostgreSQL DDL (PGlite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run SQL tests
+        working-directory: services/c7/operaton/sql/test
+        run: npm ci && node test.mjs
